@@ -51,10 +51,10 @@ Status: Approved
       prerequisites, build, modules, fixtures), `ingestion/README.md`,
       and `chat/README.md`.
 
-- [ ] 11. **Push and verify CI** — Push to `main`, confirm both matrix
+- [x] 11. **Push and verify CI** — Push to `main`, confirm both matrix
       CI jobs pass on GitHub Actions.
 
-- [ ] 12. **Configure branch protection** — Via `gh` CLI / GitHub API:
+- [x] 12. **Configure branch protection** — Via `gh` CLI / GitHub API:
       enable auto-merge repo setting, set branch protection on `main`
       (require PRs, dismiss stale approvals, squash-only, require
       "Build ingestion" and "Build chat" checks, require branches
