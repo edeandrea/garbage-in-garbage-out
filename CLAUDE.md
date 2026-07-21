@@ -23,6 +23,9 @@ built and maintained by the docling-java / quarkus-docling project lead.
   covering it. Running the pre-existing suite isn't sufficient on its own,
   `/spec-implement` must add or update tests for whatever a task built
   before that task gets checked off.
+- Integration tests: every module must run failsafe integration tests
+  during `verify`. Never set `<skipITs>true</skipITs>` or otherwise
+  skip integration tests.
 - Dependencies: kept current via Dependabot.
 - CI: every PR builds and runs the full test suite via GitHub Actions
   before merge.
