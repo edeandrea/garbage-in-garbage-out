@@ -26,4 +26,4 @@ Demo application for the talk *"Garbage In, Insight Out: Document Intelligence f
 The `fixtures/` directory contains demo documents used for ingestion:
 
 - `doclaynet-2206.01062v1.pdf` — the DocLayNet paper (arXiv:2206.01062v1), used as the primary fixture for all three RAG modes.
-- `docling_siemens_20260520.pptx` — supplementary presentation material.
+- `docling.pptx` — supplementary presentation material.
