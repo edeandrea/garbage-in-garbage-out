@@ -90,7 +90,7 @@ Status: Approved
       `@QuarkusTest` that chunks the fixture PDF via Docling and asserts
       chunks are returned with page metadata.
 
-- [ ] 10. **Implement ChunkingStrategy interface and NaiveChunker** — Define
+- [x] 10. **Implement ChunkingStrategy interface and NaiveChunker** — Define
       `ChunkingStrategy` interface (takes an `ExtractionResult`, returns a
       list of `TextSegment`s). Used by modes A and B only — Mode C bypasses
       this. Implement `NaiveChunker`: chunk the `Document` with

@@ -302,3 +302,35 @@ Add a `extractAndChunk(Path)` method to `DoclingExtractor` that returns
 
 `@QuarkusTest` that chunks the fixture PDF via Docling and asserts
 chunks are returned with page metadata.
+
+---
+
+## Task 10: Implement ChunkingStrategy and NaiveChunker
+
+### Package
+
+`dev.ericdeandrea.docling.ai.ingestion`
+
+### Classes
+
+- `ChunkingStrategy` — interface: `List<TextSegment> chunk(ExtractionResult result, Mode mode)`
+  Used by modes A and B only.
+- `NaiveChunker` — CDI bean implementing `ChunkingStrategy`:
+  1. Chunk the `Document` from `ExtractionResult` with
+     `DocumentBySentenceSplitter(maxTokens, overlap)`
+  2. Enrich with `collectTextSegmentAndExtendedContent(segments, 2, 2)`
+  3. Attach `mode` metadata to each segment
+  4. If `ExtractionResult.hasProvenance()` (Mode B), post-process each
+     segment to map its text position back to the provenance entries
+     for `page_number`, `element_type`, `element_label`
+
+### Config
+
+Inject `RagConfig` for `maxTokens` and `overlap` values.
+
+### Test
+
+Unit test with synthetic text verifying:
+- Segments produced with `mode` metadata
+- Provenance post-processing attaches page metadata when available
+- Missing provenance (Mode A) skips post-processing
