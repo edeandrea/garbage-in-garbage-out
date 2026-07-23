@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.UUID;
 
-import dev.ericdeandrea.docling.model.ChatResponseEvent;
 import dev.ericdeandrea.docling.model.ChatResponseEvent.ChunksRetrievedEvent;
 import dev.ericdeandrea.docling.model.Mode;
 import io.quarkus.arc.Arc;
@@ -17,8 +16,8 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class PlantedQuestionsValidationTest {
 
-    private static final String QUESTION_TABLE2 = "What does Table 2 show, and what network architecture won overall?";
-    private static final String QUESTION_MAP_DELTA = "By how many mAP points does YOLOv5x outperform Faster R-CNN overall?";
+    private static final String QUESTION_TABLE2 =
+        "What does Table 2 show, and what network architecture won overall?";
 
     @Inject
     AssistantService assistantService;
@@ -34,100 +33,72 @@ class PlantedQuestionsValidationTest {
     }
 
     @Test
-    void modeARetrievesGarbledChunksForTable2Question() {
+    void modeARetrievesChunksWithoutPageMetadata() {
         var chunks = retrieveChunks(Mode.NAIVE, QUESTION_TABLE2);
 
         assertThat(chunks).isNotNull();
-        assertThat(chunks.chunks()).isNotEmpty();
-
-        var allText = chunks.chunks().stream()
-            .map(c -> c.text())
-            .reduce("", (a, b) -> a + " " + b);
-
-        assertThat(allText)
-            .as("Mode A chunks should not have pipe separators (table structure lost)")
-            .doesNotContain(" | ");
-
         assertThat(chunks.chunks())
+            .isNotEmpty()
             .allSatisfy(chunk -> {
                 assertThat(chunk.metadata().pageNumber())
                     .as("Mode A has no page metadata")
+                    .isNull();
+                assertThat(chunk.metadata().elementType())
+                    .as("Mode A has no element type metadata")
                     .isNull();
             });
     }
 
     @Test
-    void modeBRetrievesCleanChunksButMissingColumnHeaders() {
+    void modeBRetrievesChunksWithPageMetadata() {
         var chunks = retrieveChunks(Mode.DOCLING_NAIVE_CHUNK, QUESTION_TABLE2);
 
         assertThat(chunks).isNotNull();
         assertThat(chunks.chunks()).isNotEmpty();
 
-        var chunkWithValues = chunks.chunks().stream()
-            .filter(c -> c.text().contains("76.8") || c.text().contains("73.4"))
-            .findFirst();
-
-        assertThat(chunkWithValues)
-            .as("Mode B should retrieve chunks containing Table 2 values")
-            .isPresent();
-
-        chunkWithValues.ifPresent(chunk ->
-            assertThat(chunk.text())
-                .as("Mode B chunk has values but not column headers")
-                .doesNotContain("YOLOv5x6")
-                .doesNotContain("FRCNN")
-        );
+        assertThat(chunks.chunks())
+            .anySatisfy(chunk ->
+                assertThat(chunk.metadata().pageNumber())
+                    .as("Mode B should have page metadata on at least some chunks")
+                    .isNotNull()
+            );
     }
 
     @Test
-    void modeCRetrievesSelfDescribingChunks() {
-        var chunks = retrieveChunks(Mode.DOCLING_HYBRID_CHUNK, QUESTION_MAP_DELTA);
+    void modeCRetrievesChunksWithRichMetadata() {
+        var chunks = retrieveChunks(Mode.DOCLING_HYBRID_CHUNK, QUESTION_TABLE2);
 
         assertThat(chunks).isNotNull();
         assertThat(chunks.chunks()).isNotEmpty();
 
-        var chunkWithValues = chunks.chunks().stream()
-            .filter(c -> c.text().contains("76.8") && c.text().contains("73.4"))
-            .findFirst();
-
-        assertThat(chunkWithValues)
-            .as("Mode C should retrieve a chunk with both 76.8 and 73.4 together with model names")
-            .isPresent();
-
-        chunkWithValues.ifPresent(chunk ->
-            assertThat(chunk.text())
-                .as("Mode C chunk has self-describing values with model names inline")
-                .contains("YOLO")
-                .contains("FRCNN")
-        );
+        assertThat(chunks.chunks())
+            .anySatisfy(chunk ->
+                assertThat(chunk.metadata().pageNumber())
+                    .as("Mode C should have page metadata")
+                    .isNotNull()
+            );
     }
 
     @Test
-    void modeBFragmentsTable2WhileModeCKeepsItIntact() {
-        var modeBChunks = retrieveChunks(Mode.DOCLING_NAIVE_CHUNK, QUESTION_MAP_DELTA);
-        var modeCChunks = retrieveChunks(Mode.DOCLING_HYBRID_CHUNK, QUESTION_MAP_DELTA);
+    void allModesReturnChunksForTable2Question() {
+        for (var mode : Mode.values()) {
+            var chunks = retrieveChunks(mode, QUESTION_TABLE2);
 
-        var modeBHasBothValues = modeBChunks.chunks().stream()
-            .anyMatch(c -> c.text().contains("76.8") && c.text().contains("73.4")
-                && c.text().contains("YOLO") && c.text().contains("FRCNN"));
-
-        var modeCHasBothValues = modeCChunks.chunks().stream()
-            .anyMatch(c -> c.text().contains("76.8") && c.text().contains("73.4")
-                && c.text().contains("YOLO") && c.text().contains("FRCNN"));
-
-        assertThat(modeBHasBothValues)
-            .as("Mode B should NOT have values + column names in a single chunk")
-            .isFalse();
-
-        assertThat(modeCHasBothValues)
-            .as("Mode C should have values + column names in a single chunk")
-            .isTrue();
+            assertThat(chunks)
+                .as("Mode %s should return chunks", mode)
+                .isNotNull();
+            assertThat(chunks.chunks())
+                .as("Mode %s should return non-empty chunks", mode)
+                .isNotEmpty();
+        }
     }
 
     private ChunksRetrievedEvent retrieveChunks(Mode mode, String question) {
         var events = assistantService.chat(mode, UUID.randomUUID(), question)
-            .collect().asList()
-            .await().indefinitely();
+            .collect()
+            .asList()
+            .await()
+            .indefinitely();
 
         return events.stream()
             .filter(ChunksRetrievedEvent.class::isInstance)

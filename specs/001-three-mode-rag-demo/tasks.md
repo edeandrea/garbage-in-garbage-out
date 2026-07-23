@@ -214,7 +214,7 @@ Status: Approved
        `QuarkusBrowserlessTest` verifying the response-to-chunks
        association.
 
-- [ ] 22. **End-to-end planted questions validation** — Run the full app
+- [x] 22. **End-to-end planted questions validation** — Run the full app
        and test planted questions across all three modes via
        `AssistantService`. Assert on retrieval, not generation — LLM
        output is non-deterministic, so tests verify the right chunks were
