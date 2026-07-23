@@ -17,13 +17,21 @@ import dev.langchain4j.rag.RetrievalAugmentor;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 
+// Routes each chat request to the correct Qdrant collection based on the active mode.
+//
+// At ingestion time, each mode's pipeline stored its segments into a separate named
+// collection (naive, docling-naive, docling-hybrid). At query time, this augmentor
+// reads the current mode from the @RequestScoped CurrentMode bean and looks up a
+// pre-built retriever pointed at that mode's collection. This is the mechanism that
+// lets the demo run three RAG pipelines side-by-side with a single @RegisterAiService.
 @ApplicationScoped
 class ModeAwareRetrievalAugmentor implements RetrievalAugmentor {
 
     private final CurrentMode currentMode;
-    private final Map<Mode, EmbeddingStore<TextSegment>> stores;
-    private final EmbeddingModel embeddingModel;
-    private final DemoConfig demoConfig;
+
+    // Pre-built augmentors — one per mode, each wired to its own Qdrant collection.
+    // Built once at construction time; the only thing that changes per request is which one we pick.
+    private final Map<Mode, RetrievalAugmentor> augmentors;
 
     ModeAwareRetrievalAugmentor(
             CurrentMode currentMode,
@@ -33,30 +41,33 @@ class ModeAwareRetrievalAugmentor implements RetrievalAugmentor {
             EmbeddingModel embeddingModel,
             DemoConfig demoConfig) {
         this.currentMode = currentMode;
-        this.stores = Map.of(
-            Mode.NAIVE, naiveStore,
-            Mode.DOCLING_NAIVE_CHUNK, doclingNaiveStore,
-            Mode.DOCLING_HYBRID_CHUNK, doclingHybridStore
+
+        var topK = demoConfig.rag().topK();
+        this.augmentors = Map.of(
+            Mode.NAIVE, buildAugmentor(naiveStore, embeddingModel, topK),
+            Mode.DOCLING_NAIVE_CHUNK, buildAugmentor(doclingNaiveStore, embeddingModel, topK),
+            Mode.DOCLING_HYBRID_CHUNK, buildAugmentor(doclingHybridStore, embeddingModel, topK)
         );
-        this.embeddingModel = embeddingModel;
-        this.demoConfig = demoConfig;
     }
 
     @Override
     public AugmentationResult augment(AugmentationRequest request) {
-        var mode = currentMode.mode();
-        var store = stores.get(mode);
+        // Look up the active mode (set by AssistantService before each chat call)
+        // and delegate to the pre-built augmentor for that mode's Qdrant collection.
+        return this.augmentors.get(this.currentMode.mode())
+            .augment(request);
+    }
 
+    private static RetrievalAugmentor buildAugmentor(EmbeddingStore<TextSegment> store,
+                                                      EmbeddingModel embeddingModel, int topK) {
         var retriever = EmbeddingStoreContentRetriever.builder()
             .embeddingStore(store)
             .embeddingModel(embeddingModel)
-            .maxResults(demoConfig.rag().topK())
+            .maxResults(topK)
             .build();
 
-        var augmentor = DefaultRetrievalAugmentor.builder()
+        return DefaultRetrievalAugmentor.builder()
             .contentRetriever(retriever)
             .build();
-
-        return augmentor.augment(request);
     }
 }

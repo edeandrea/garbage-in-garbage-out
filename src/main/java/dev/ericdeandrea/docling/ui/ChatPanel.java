@@ -16,7 +16,7 @@ import com.vaadin.flow.component.messages.MessageList;
 import com.vaadin.flow.component.messages.MessageListItem;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.theme.lumo.LumoUtility;
+import com.vaadin.flow.theme.lumo.LumoUtility.Whitespace;
 
 import dev.ericdeandrea.docling.ai.AssistantService;
 import dev.ericdeandrea.docling.model.ChatResponseEvent.ChunksRetrievedEvent;
@@ -30,7 +30,6 @@ class ChatPanel extends VerticalLayout {
 
     private final Mode mode;
     private final MessageList messageList;
-    private final MessageInput messageInput;
     private final AssistantService assistantService;
     private final Details chunksDetails;
     private final Grid<ChunkRow> chunksGrid;
@@ -45,7 +44,7 @@ class ChatPanel extends VerticalLayout {
         this.mode = mode;
         this.assistantService = assistantService;
         this.messageList = new MessageList();
-        this.messageInput = new MessageInput();
+        var messageInput = new MessageInput();
         this.chunksGrid = createChunksGrid();
         this.chunksDetails = new Details("Retrieved Chunks", chunksGrid);
 
@@ -93,7 +92,7 @@ class ChatPanel extends VerticalLayout {
 
         grid.setItemDetailsRenderer(new ComponentRenderer<>(row -> {
             var pre = new Pre(row.chunk().text());
-            pre.addClassNames(LumoUtility.Whitespace.PRE_WRAP);
+            pre.addClassNames(Whitespace.PRE_WRAP);
             return pre;
         }));
 
@@ -108,38 +107,38 @@ class ChatPanel extends VerticalLayout {
     private void onSubmit(SubmitEvent event) {
         var userMessage = event.getValue();
         var ui = UI.getCurrent();
-        currentRound++;
-        var colorIndex = currentRound % MAX_COLOR_INDEX;
+        this.currentRound++;
+        var colorIndex = this.currentRound % MAX_COLOR_INDEX;
 
         var userItem = new MessageListItem(userMessage);
         userItem.setUserName("You");
-        items.add(userItem);
+        this.items.add(userItem);
 
-        currentAssistantItem = new MessageListItem("");
-        currentAssistantItem.setUserName(mode.displayLabel());
-        currentAssistantItem.setUserColorIndex(colorIndex);
-        roundToAssistantItem.put(currentRound, currentAssistantItem);
-        items.add(currentAssistantItem);
+        this.currentAssistantItem = new MessageListItem("");
+        this.currentAssistantItem.setUserName(this.mode.displayLabel());
+        this.currentAssistantItem.setUserColorIndex(colorIndex);
+        this.roundToAssistantItem.put(this.currentRound, this.currentAssistantItem);
+        this.items.add(this.currentAssistantItem);
 
-        messageList.setItems(new ArrayList<>(items));
+        this.messageList.setItems(List.copyOf(this.items));
 
-        var round = currentRound;
-        assistantService.chat(mode, conversationId, userMessage)
+        var round = this.currentRound;
+        this.assistantService.chat(this.mode, this.conversationId, userMessage)
             .subscribe()
             .with(
                 chatEvent -> ui.access(() -> {
                     switch (chatEvent) {
                         case TokenEvent token -> {
-                            currentAssistantItem.setText("%s%s".formatted(currentAssistantItem.getText(), token.text()));
-                            messageList.setItems(new ArrayList<>(items));
+                            this.currentAssistantItem.setText("%s%s".formatted(this.currentAssistantItem.getText(), token.text()));
+                            this.messageList.setItems(List.copyOf(this.items));
                         }
                         case ChunksRetrievedEvent chunksEvent -> addChunks(chunksEvent, round);
-                        case CompletedEvent ignored -> {}
+                        case CompletedEvent _ -> {}
                     }
                 }),
                 failure -> ui.access(() -> {
-                    currentAssistantItem.setText("Error: %s".formatted(failure.getMessage()));
-                    messageList.setItems(new ArrayList<>(items));
+                    this.currentAssistantItem.setText("Error: %s".formatted(failure.getMessage()));
+                    this.messageList.setItems(List.copyOf(this.items));
                 })
             );
     }
@@ -149,34 +148,22 @@ class ChatPanel extends VerticalLayout {
             .map(chunk -> new ChunkRow(round, chunk))
             .toList();
 
-        allChunkRows.addAll(0, newRows);
-        chunksGrid.setItems(new ArrayList<>(allChunkRows));
-        chunksDetails.setSummaryText("Retrieved Chunks (%d)".formatted(allChunkRows.size()));
-        chunksDetails.setOpened(true);
+        this.allChunkRows.addAll(0, newRows);
+        this.chunksGrid.setItems(List.copyOf(this.allChunkRows));
+        this.chunksDetails.setSummaryText("Retrieved Chunks (%d)".formatted(this.allChunkRows.size()));
+        this.chunksDetails.setOpened(true);
     }
 
     private void highlightMessageForRound(int round) {
-        for (var item : roundToAssistantItem.values()) {
+        for (var item : this.roundToAssistantItem.values()) {
             item.removeClassNames("highlighted");
         }
 
-        var targetItem = roundToAssistantItem.get(round);
+        var targetItem = this.roundToAssistantItem.get(round);
         if (targetItem != null) {
             targetItem.addClassNames("highlighted");
         }
 
-        messageList.setItems(new ArrayList<>(items));
-    }
-
-    Mode mode() {
-        return mode;
-    }
-
-    MessageList messageList() {
-        return messageList;
-    }
-
-    MessageInput messageInput() {
-        return messageInput;
+        this.messageList.setItems(List.copyOf(this.items));
     }
 }

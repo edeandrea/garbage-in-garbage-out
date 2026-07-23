@@ -16,7 +16,7 @@ public class TikaExtractor {
 
     public ExtractionResult extract(Path documentPath) {
         try (var inputStream = Files.newInputStream(documentPath)) {
-            var document = parser.parse(inputStream);
+            var document = this.parser.parse(inputStream);
             return new ExtractionResult(document);
         }
         catch (IOException e) {

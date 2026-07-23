@@ -51,12 +51,12 @@ public class ChatView extends VerticalLayout {
         toolbar.add(new H2("Garbage In, Insight Out"));
 
         for (var mode : Mode.values()) {
-            var button = new Button(mode.displayLabel(), event -> toggleMode(mode));
-            toggleButtons.put(mode, button);
+            var button = new Button(mode.displayLabel(), _ -> toggleMode(mode));
+            this.toggleButtons.put(mode, button);
             toolbar.add(button);
         }
 
-        var themeToggle = new Button(VaadinIcon.ADJUST.create(), event -> toggleTheme());
+        var themeToggle = new Button(VaadinIcon.ADJUST.create(), _ -> toggleTheme());
         themeToggle.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         themeToggle.setTooltipText("Toggle light/dark mode");
 
@@ -69,9 +69,9 @@ public class ChatView extends VerticalLayout {
     }
 
     private void toggleTheme() {
-        isDarkMode = !isDarkMode;
+        this.isDarkMode = !this.isDarkMode;
         UI.getCurrent().getPage().setColorScheme(
-            isDarkMode ? ColorScheme.Value.DARK : ColorScheme.Value.LIGHT
+          this.isDarkMode ? ColorScheme.Value.DARK:ColorScheme.Value.LIGHT
         );
     }
 
@@ -82,19 +82,20 @@ public class ChatView extends VerticalLayout {
     }
 
     void toggleMode(Mode mode) {
-        if (panels.containsKey(mode)) {
-            panelContainer.remove(panels.get(mode));
-            panels.remove(mode);
-            toggleButtons.get(mode).removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        } else {
-            var panel = new ChatPanel(mode, assistantService);
-            panels.put(mode, panel);
-            panelContainer.add(panel);
-            toggleButtons.get(mode).addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        if (this.panels.containsKey(mode)) {
+            this.panelContainer.remove(this.panels.get(mode));
+            this.panels.remove(mode);
+            this.toggleButtons.get(mode).removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        }
+        else {
+            var panel = new ChatPanel(mode, this.assistantService);
+            this.panels.put(mode, panel);
+            this.panelContainer.add(panel);
+            this.toggleButtons.get(mode).addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         }
     }
 
     Map<Mode, ChatPanel> panels() {
-        return panels;
+        return this.panels;
     }
 }

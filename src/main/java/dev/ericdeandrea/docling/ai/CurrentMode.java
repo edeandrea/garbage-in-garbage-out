@@ -10,7 +10,7 @@ class CurrentMode {
     private Mode mode;
 
     Mode mode() {
-        return mode;
+        return this.mode;
     }
 
     void mode(Mode mode) {

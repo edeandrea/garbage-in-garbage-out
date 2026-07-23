@@ -18,6 +18,16 @@ import io.quarkus.test.junit.QuarkusTest;
 
 import io.quarkiverse.docling.runtime.client.DoclingService;
 
+// Utility test that captures real Docling Serve responses and writes them to
+// src/test/resources/__files/ — the directory WireMock serves stub responses from.
+//
+// Skipped by default. Run with -Dcapture.docling.responses=true when you need to
+// refresh the captured JSON (e.g. after upgrading Docling Serve or changing the
+// fixture PDF). Requires a running Docling Serve instance (dev services will start one).
+//
+// The captured files are:
+//   - docling-convert-response.json  (~986KB) — used by the "docling-convert" WireMock stub
+//   - docling-chunk-response.json    (~90KB)  — used by the "docling-chunk-hybrid" WireMock stub
 @QuarkusTest
 @EnabledIfSystemProperty(named = "capture.docling.responses", matches = "true")
 class CaptureDoclingResponsesTest {

@@ -1180,3 +1180,117 @@ needs a real LLM, so it shouldn't run by default.
 with `@EnabledIfSystemProperty(named = "run.planted-questions",
 matches = "true")`. Only runs when explicitly requested with
 `-Drun.planted-questions=true`. CI passes this property.
+
+## 73. [2026-07-23 16:11 EDT]: Avoid short-circuiting early returns
+
+**Question:** Should methods use early `return` statements for guard
+clauses, or avoid them in favor of single-exit-point flow?
+
+**Options:**
+1. Allow early returns for guard clauses (common Java idiom)
+2. Avoid early returns; use Optional chains or if/else for single exit
+
+**Decision:** Option 2. Early returns make it harder to see the full
+control flow at a glance. Refactored `DoclingExtractor.toProvenanceEntry`
+to use `Optional.ofNullable(...).filter(...).map(...)` chain instead of
+two guard-clause returns. Refactored `tableToText` similarly. Converted
+`IngestionStartup.runPipeline` guard clause to if/else.
+
+## 74. [2026-07-23 16:17 EDT]: Use @All List instead of Instance for pipeline injection
+
+**Question:** Should `IngestionStartup` use `Instance<IngestionPipeline>`
+or `@All List<IngestionPipeline>` for collecting all pipeline beans?
+
+**Options:**
+1. Keep `Instance<IngestionPipeline>` (lazy resolution)
+2. Use `@All List<IngestionPipeline>` (simpler, eager)
+
+**Decision:** Option 2. We only `.stream()` over the pipelines — we
+don't need the lazy-resolution semantics of `Instance`. `@All` makes
+the "give me every implementation" intent explicit.
+
+## 75. [2026-07-23 16:18 EDT]: Make collectionName() a default method on IngestionPipeline
+
+**Question:** All three pipeline implementations return
+`mode().storeName()` from `collectionName()`. Should this be a default
+method on the interface?
+
+**Options:**
+1. Keep as abstract method with identical overrides in each implementation
+2. Make it a default method: `default String collectionName() { return mode().storeName(); }`
+
+**Decision:** Option 2. The mapping from mode to collection name is
+a universal invariant, not an implementation detail. Removed the three
+identical overrides.
+
+## 76. [2026-07-23 16:26 EDT]: Extract AbstractIngestionPipeline base class
+
+**Question:** The embed+store block (`EmbeddingStoreIngestor.builder()...`)
+is duplicated across all three pipeline implementations. Where should this
+common logic live?
+
+**Options:**
+1. Default method on the `IngestionPipeline` interface (leaks
+   `embeddingModel()`/`embeddingStore()`/`buildSegments()` as public)
+2. Abstract base class with package-private `buildSegments()` and
+   private fields for embeddingModel/store
+
+**Decision:** Option 2. An abstract base class keeps the interface clean
+as a public contract while consolidating the embed+store boilerplate.
+Each pipeline subclass only implements `mode()` and `buildSegments()`.
+This also makes the demo more impactful — viewers see that the only
+thing that changes between modes is how segments are built, everything
+else is shared infrastructure.
+
+## 77. [2026-07-23 16:35 EDT]: Pre-build per-mode RetrievalAugmentors
+
+**Question:** `ModeAwareRetrievalAugmentor.augment()` builds a new
+`EmbeddingStoreContentRetriever` and `DefaultRetrievalAugmentor` on
+every call. Should these be pre-built at construction time?
+
+**Options:**
+1. Keep building on each call (current behavior)
+2. Pre-build a `Map<Mode, RetrievalAugmentor>` at construction time
+
+**Decision:** Option 2. The augmentors are stateless once built — the
+store, model, and topK are all known at construction time. Pre-building
+avoids unnecessary object allocation on every chat request.
+
+## 78. [2026-07-23 16:42 EDT]: ChatService scope and parameter naming
+
+**Question:** ChatService is `@SessionScoped` but uses `@MemoryId` for
+conversation isolation. Is `@SessionScoped` necessary? Also, should
+`memoryId` be renamed to something more meaningful?
+
+**Options:**
+1. Keep `@SessionScoped` with `memoryId`
+2. Switch to `@ApplicationScoped`, rename `memoryId` to `conversationId`
+
+**Decision:** Option 2. `@MemoryId` already handles per-conversation
+memory isolation, so `@SessionScoped` adds unnecessary lifecycle
+overhead. `conversationId` better describes what the parameter
+represents from the caller's perspective.
+
+## 79. [2026-07-23 17:02 EDT]: Type ChatService conversationId as UUID
+
+**Question:** `ChatService.chat()` accepts `@MemoryId Object conversationId`
+but callers always pass a `UUID`. Should it be typed to `UUID`?
+
+**Decision:** Yes. `Object` is overly permissive when we always pass a
+`UUID`. Typing the parameter makes the contract explicit and prevents
+accidental misuse.
+
+## 80. [2026-07-23 17:25 EDT]: ChatPanelTest with mocked AssistantService
+
+**Question:** How should we test ChatPanel's UI behavior (color bubbles,
+chunk grid population, highlight on row click) without a real LLM?
+
+**Options:**
+1. Full Playwright/WebSocket end-to-end test
+2. QuarkusBrowserlessTest with @InjectMock on AssistantService
+
+**Decision:** Option 2. Use `@InjectMock` to return controlled `Multi`
+events (TokenEvent, ChunksRetrievedEvent, CompletedEvent), then assert
+on component state via browserless test API. Tests go in a new
+`ChatPanelTest` class. This avoids browser/WebSocket complexity while
+still exercising the real UI component logic.

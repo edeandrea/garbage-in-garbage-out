@@ -87,13 +87,32 @@ class NaiveChunkerTest {
     private static class TestDemoConfig implements DemoConfig {
         private final RagConfig ragConfig = new TestRagConfig();
 
-        @Override public RagConfig rag() { return ragConfig; }
+        @Override
+        public RagConfig rag() {
+            return ragConfig;
+        }
     }
 
     private static class TestRagConfig implements DemoConfig.RagConfig {
-        @Override public int topK() { return 4; }
-        @Override public int maxTokens() { return 50; }
-        @Override public int overlap() { return 10; }
-        @Override public String fixturePath() { return "fixtures/doclaynet-2206.01062v1.pdf"; }
+
+        @Override
+        public int topK() {
+            return 4;
+        }
+
+        @Override
+        public int maxTokens() {
+            return 50;
+        }
+
+        @Override
+        public int overlap() {
+            return 10;
+        }
+
+        @Override
+        public String fixturePath() {
+            return "fixtures/doclaynet-2206.01062v1.pdf";
+        }
     }
 }

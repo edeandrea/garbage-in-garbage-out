@@ -51,7 +51,10 @@ Tests use WireMock to stub the LLM chat endpoint (no real LLM needed for most te
 ./mvnw test -Drun.simulations=true
 ```
 
-Runs [`ChunkSizeSimulationTest`](src/test/java/dev/ericdeandrea/docling/ai/ingestion/ChunkSizeSimulationTest.java) and [`ModeAvsModeBTest`](src/test/java/dev/ericdeandrea/docling/ai/ingestion/ModeAvsModeBTest.java) — diagnostic tests that output chunk analysis to the console for manual inspection.
+Runs simulation tests that output chunk analysis to the console for manual inspection. Requires a real Docling Serve instance (dev services will start one).
+
+- [`ChunkSizeSimulationTest`](src/test/java/dev/ericdeandrea/docling/ai/ingestion/pipeline/ChunkSizeSimulationTest.java) — splits the document at multiple `maxTokens` values and reports whether Table 2 values get fragmented. This is how `maxTokens=300` was determined.
+- [`ModeAvsModeBTest`](src/test/java/dev/ericdeandrea/docling/ai/ingestion/pipeline/ModeAvsModeBTest.java) — side-by-side comparison of Mode A (Tika) vs Mode B (Docling) chunks for Table 2. Shows the quality difference from extraction alone.
 
 ### Planted questions validation
 
@@ -60,6 +63,14 @@ Runs [`ChunkSizeSimulationTest`](src/test/java/dev/ericdeandrea/docling/ai/inges
 ```
 
 Runs [`PlantedQuestionsValidationTest`](src/test/java/dev/ericdeandrea/docling/ai/PlantedQuestionsValidationTest.java), which needs a real LLM (not WireMock). Skipped by default.
+
+### Capturing Docling responses
+
+```shell
+./mvnw test -Dcapture.docling.responses=true
+```
+
+Runs [`CaptureDoclingResponsesTest`](src/test/java/dev/ericdeandrea/docling/ai/ingestion/extraction/CaptureDoclingResponsesTest.java), which calls a real Docling Serve instance and writes the JSON responses to `src/test/resources/__files/`. These captured files are what the WireMock stubs serve back during tests. Run this when upgrading Docling Serve or changing the fixture PDF.
 
 ### WireMock testing
 

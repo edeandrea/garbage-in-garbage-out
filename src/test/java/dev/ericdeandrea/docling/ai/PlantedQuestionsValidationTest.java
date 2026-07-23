@@ -2,17 +2,15 @@ package dev.ericdeandrea.docling.ai;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 
 import jakarta.inject.Inject;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
-import io.quarkus.arc.Arc;
 import io.quarkus.test.junit.QuarkusTest;
 
 import dev.ericdeandrea.docling.model.ChatResponseEvent.ChunksRetrievedEvent;
@@ -27,16 +25,6 @@ class PlantedQuestionsValidationTest {
 
     @Inject
     AssistantService assistantService;
-
-    @BeforeEach
-    void activateSessionContext() {
-        Arc.container().sessionContext().activate();
-    }
-
-    @AfterEach
-    void deactivateSessionContext() {
-        Arc.container().sessionContext().deactivate();
-    }
 
     @Test
     void modeARetrievesChunksWithoutPageMetadata() {
@@ -101,7 +89,7 @@ class PlantedQuestionsValidationTest {
             .collect()
             .asList()
             .await()
-            .indefinitely();
+            .atMost(Duration.ofMinutes(5));
 
         return events.stream()
             .filter(ChunksRetrievedEvent.class::isInstance)

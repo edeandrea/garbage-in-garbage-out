@@ -14,10 +14,10 @@ public enum Mode {
     }
 
     public String storeName() {
-        return storeName;
+        return this.storeName;
     }
 
     public String displayLabel() {
-        return displayLabel;
+        return this.displayLabel;
     }
 }

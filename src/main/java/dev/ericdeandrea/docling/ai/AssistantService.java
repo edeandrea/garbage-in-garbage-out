@@ -32,13 +32,13 @@ public class AssistantService {
         this.chunkMapper = chunkMapper;
     }
 
-    public Multi<ChatResponseEvent> chat(Mode mode, UUID memoryId, String message) {
-        currentMode.mode(mode);
+    public Multi<ChatResponseEvent> chat(Mode mode, UUID conversationId, String message) {
+        this.currentMode.mode(mode);
 
-        return chatService.chat(memoryId, message)
-            .filter(event -> event instanceof PartialResponseEvent
-                || event instanceof ContentFetchedEvent
-                || event instanceof ChatCompletedEvent)
+        return this.chatService.chat(conversationId, message)
+            .filter(event -> (event instanceof PartialResponseEvent)
+                || (event instanceof ContentFetchedEvent)
+                || (event instanceof ChatCompletedEvent))
             .map(this::toModelEvent);
     }
 
@@ -51,12 +51,12 @@ public class AssistantService {
                         var score = (content.metadata() != null)
                             ? (Double) content.metadata().getOrDefault(ContentMetadata.SCORE, 0.0)
                             : 0.0;
-                        return chunkMapper.toRetrievedChunk(content.textSegment(), score, Instant.now());
+                        return this.chunkMapper.toRetrievedChunk(content.textSegment(), score, Instant.now());
                     })
                     .toList();
                 yield new ChunksRetrievedEvent(chunks);
             }
-            case ChatCompletedEvent ignored -> new CompletedEvent();
+            case ChatCompletedEvent _ -> new CompletedEvent();
             default -> throw new IllegalStateException(
                 "Unexpected event type: %s".formatted(event.getEventType()));
         };

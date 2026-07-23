@@ -14,6 +14,18 @@ import dev.ericdeandrea.docling.ai.ingestion.extraction.DoclingExtractor;
 import dev.ericdeandrea.docling.ai.ingestion.extraction.TikaExtractor;
 import dev.ericdeandrea.docling.model.Mode;
 
+// Diagnostic test that side-by-side compares how Mode A (Tika) and Mode B (Docling)
+// chunk the same Table 2 data from the DocLayNet paper.
+//
+// Skipped by default. Run with -Drun.simulations=true to see console output.
+// Requires a real Docling Serve instance (dev services will start one).
+//
+// The output shows the raw chunk text for each mode, making it visually obvious that:
+//   - Mode A chunks are garbled — table values run together, columns merge,
+//     unrelated text from adjacent page regions gets spliced in.
+//   - Mode B chunks are clean — but column headers ("FRCNN", "YOLOv5") end up
+//     in a different chunk from the data values (76.8, 73.4).
+// This is the core demo narrative: same chunker, different extraction = different quality.
 @QuarkusTest
 @EnabledIfSystemProperty(named = "run.simulations", matches = "true")
 class ModeAvsModeBTest {

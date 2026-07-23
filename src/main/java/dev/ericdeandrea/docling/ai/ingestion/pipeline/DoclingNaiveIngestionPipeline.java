@@ -10,29 +10,28 @@ import io.quarkiverse.langchain4j.EmbeddingStoreName;
 import dev.ericdeandrea.docling.ai.ingestion.chunking.NaiveChunker;
 import dev.ericdeandrea.docling.ai.ingestion.extraction.DoclingExtractor;
 import dev.ericdeandrea.docling.model.Mode;
-import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
-import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 
+/**
+ * Mode B pipeline: Docling structured extraction + {@link NaiveChunker} sentence splitting.
+ * Better extraction than Mode A, but the sentence splitter still separates table headers from values.
+ */
 @ApplicationScoped
-class DoclingNaiveIngestionPipeline implements IngestionPipeline {
+class DoclingNaiveIngestionPipeline extends AbstractIngestionPipeline {
 
     private final DoclingExtractor doclingExtractor;
     private final NaiveChunker naiveChunker;
-    private final EmbeddingModel embeddingModel;
-    private final EmbeddingStore<TextSegment> store;
 
     DoclingNaiveIngestionPipeline(
             DoclingExtractor doclingExtractor,
             NaiveChunker naiveChunker,
             EmbeddingModel embeddingModel,
             @EmbeddingStoreName("docling-naive") EmbeddingStore<TextSegment> store) {
+        super(embeddingModel, store);
         this.doclingExtractor = doclingExtractor;
         this.naiveChunker = naiveChunker;
-        this.embeddingModel = embeddingModel;
-        this.store = store;
     }
 
     @Override
@@ -41,23 +40,14 @@ class DoclingNaiveIngestionPipeline implements IngestionPipeline {
     }
 
     @Override
-    public String collectionName() {
-        return Mode.DOCLING_NAIVE_CHUNK.storeName();
-    }
+    List<TextSegment> buildSegments(Path documentPath) {
+        // Docling produces clean, structured text — tables are properly formatted, headings
+        // are separated from body text, and provenance (page number, element type) is preserved.
+        var result = this.doclingExtractor.extract(documentPath);
 
-    @Override
-    public List<TextSegment> processAndStore(Path documentPath) {
-        var result = doclingExtractor.extract(documentPath);
-        var segments = naiveChunker.chunk(result, Mode.DOCLING_NAIVE_CHUNK);
-
-        EmbeddingStoreIngestor.builder()
-            .embeddingStore(store)
-            .embeddingModel(embeddingModel)
-            .build()
-            .ingest(segments.stream()
-                .map(s -> Document.from(s.text(), s.metadata()))
-                .toList());
-
-        return segments;
+        // Same sentence-splitter chunker as Mode A. Better extraction = better answers, but
+        // the naive chunker still splits table headers from data values into separate chunks.
+        // This limitation is what Mode C fixes.
+        return this.naiveChunker.chunk(result, Mode.DOCLING_NAIVE_CHUNK);
     }
 }

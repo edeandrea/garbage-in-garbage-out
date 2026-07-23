@@ -14,6 +14,20 @@ import dev.ericdeandrea.docling.ai.ingestion.extraction.DoclingExtractor;
 import dev.ericdeandrea.docling.ai.ingestion.extraction.ExtractionResult;
 import dev.langchain4j.data.document.splitter.DocumentBySentenceSplitter;
 
+// Diagnostic test for tuning the maxTokens chunk size parameter.
+//
+// Skipped by default. Run with -Drun.simulations=true to see console output.
+// Requires a real Docling Serve instance (dev services will start one).
+//
+// findTable2Content() — locates the Table 2 data values (76.8, 73.4) in the
+//   extracted text and prints surrounding context. Useful for understanding
+//   where key values land in the full document text.
+//
+// simulateChunkSizes() — splits the extracted document at multiple maxTokens
+//   values (100, 150, 200, 250, 300) and reports whether the Table 2 values
+//   end up in the same chunk or get fragmented. This is how we determined
+//   maxTokens=300 as the right setting: it's the smallest size that keeps
+//   both values together, which matters for Mode B vs C comparison.
 @QuarkusTest
 @EnabledIfSystemProperty(named = "run.simulations", matches = "true")
 class ChunkSizeSimulationTest {

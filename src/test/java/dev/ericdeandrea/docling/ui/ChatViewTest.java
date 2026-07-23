@@ -10,9 +10,12 @@ import io.quarkus.test.junit.QuarkusTest;
 
 import dev.ericdeandrea.docling.model.Mode;
 
+// Tests the ChatView's panel toggle behavior — adding, removing, and
+// managing the three mode panels (A, B, C) via the toolbar toggle buttons.
 @QuarkusTest
 class ChatViewTest extends QuarkusBrowserlessTest {
 
+    // On initial load, only Mode A should be visible — the "cold open" for the demo.
     @Test
     void defaultsToModeAOnly() {
         var view = navigate(ChatView.class);
@@ -22,6 +25,7 @@ class ChatViewTest extends QuarkusBrowserlessTest {
             .containsKey(Mode.NAIVE);
     }
 
+    // Toggling a new mode adds its panel alongside the existing one.
     @Test
     void togglesModeBPanel() {
         var view = navigate(ChatView.class);
@@ -33,6 +37,7 @@ class ChatViewTest extends QuarkusBrowserlessTest {
             .containsKeys(Mode.NAIVE, Mode.DOCLING_NAIVE_CHUNK);
     }
 
+    // Toggling an already-active mode removes its panel.
     @Test
     void togglesOffExistingPanel() {
         var view = navigate(ChatView.class);
@@ -42,6 +47,7 @@ class ChatViewTest extends QuarkusBrowserlessTest {
         assertThat(view.panels()).isEmpty();
     }
 
+    // Double-toggling a mode adds then removes it — no duplicates.
     @Test
     void maxOnePanelPerType() {
         var view = navigate(ChatView.class);
@@ -55,6 +61,7 @@ class ChatViewTest extends QuarkusBrowserlessTest {
             .doesNotContainKey(Mode.DOCLING_HYBRID_CHUNK);
     }
 
+    // All three modes can be active simultaneously for side-by-side comparison.
     @Test
     void allThreePanelsCanBeActive() {
         var view = navigate(ChatView.class);
@@ -67,6 +74,8 @@ class ChatViewTest extends QuarkusBrowserlessTest {
             .containsKeys(Mode.NAIVE, Mode.DOCLING_NAIVE_CHUNK, Mode.DOCLING_HYBRID_CHUNK);
     }
 
+    // Toggling a mode off and back on creates a fresh panel — conversation
+    // state from the previous panel is not carried over.
     @Test
     void panelStatePreservesAfterToggle() {
         var view = navigate(ChatView.class);

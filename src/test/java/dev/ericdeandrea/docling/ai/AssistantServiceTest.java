@@ -2,15 +2,13 @@ package dev.ericdeandrea.docling.ai;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Duration;
 import java.util.UUID;
 
 import jakarta.inject.Inject;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkus.arc.Arc;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 
@@ -28,21 +26,11 @@ class AssistantServiceTest {
     @Inject
     AssistantService assistantService;
 
-    @BeforeEach
-    void activateSessionContext() {
-        Arc.container().sessionContext().activate();
-    }
-
-    @AfterEach
-    void deactivateSessionContext() {
-        Arc.container().sessionContext().deactivate();
-    }
-
     @Test
     void producesTokenAndCompletedEvents() {
         var events = assistantService.chat(Mode.NAIVE, UUID.randomUUID(), "What is DocLayNet?")
             .collect().asList()
-            .await().indefinitely();
+            .await().atMost(Duration.ofMinutes(5));
 
         assertThat(events)
             .isNotEmpty()
@@ -54,7 +42,7 @@ class AssistantServiceTest {
     void producesChunksRetrievedEvents() {
         var events = assistantService.chat(Mode.DOCLING_HYBRID_CHUNK, UUID.randomUUID(), "What does Table 2 show?")
             .collect().asList()
-            .await().indefinitely();
+            .await().atMost(Duration.ofMinutes(5));
 
         assertThat(events)
             .anySatisfy(event -> assertThat(event).isInstanceOf(ChunksRetrievedEvent.class));
@@ -72,22 +60,38 @@ class AssistantServiceTest {
     void switchesModesBetweenRequests() {
         var modeAEvents = assistantService.chat(Mode.NAIVE, UUID.randomUUID(), "What is DocLayNet?")
             .collect().asList()
-            .await().indefinitely();
+            .await().atMost(Duration.ofMinutes(5));
 
-        assertThat(modeAEvents).isNotEmpty();
+        var modeAChunks = modeAEvents.stream()
+            .filter(ChunksRetrievedEvent.class::isInstance)
+            .map(ChunksRetrievedEvent.class::cast)
+            .findFirst()
+            .orElseThrow();
+
+        assertThat(modeAChunks.chunks())
+            .isNotEmpty()
+            .allSatisfy(chunk -> assertThat(chunk.metadata().mode()).isEqualTo(Mode.NAIVE));
 
         var modeCEvents = assistantService.chat(Mode.DOCLING_HYBRID_CHUNK, UUID.randomUUID(), "What is DocLayNet?")
             .collect().asList()
-            .await().indefinitely();
+            .await().atMost(Duration.ofMinutes(5));
 
-        assertThat(modeCEvents).isNotEmpty();
+        var modeCChunks = modeCEvents.stream()
+            .filter(ChunksRetrievedEvent.class::isInstance)
+            .map(ChunksRetrievedEvent.class::cast)
+            .findFirst()
+            .orElseThrow();
+
+        assertThat(modeCChunks.chunks())
+            .isNotEmpty()
+            .allSatisfy(chunk -> assertThat(chunk.metadata().mode()).isEqualTo(Mode.DOCLING_HYBRID_CHUNK));
     }
 
     @Test
     void noLangChain4jTypesInEvents() {
         var events = assistantService.chat(Mode.NAIVE, UUID.randomUUID(), "What is DocLayNet?")
             .collect().asList()
-            .await().indefinitely();
+            .await().atMost(Duration.ofMinutes(5));
 
         assertThat(events)
             .isNotEmpty()

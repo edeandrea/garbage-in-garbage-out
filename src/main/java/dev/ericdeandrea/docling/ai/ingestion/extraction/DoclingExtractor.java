@@ -36,7 +36,7 @@ public class DoclingExtractor {
 
     public ExtractionResult extract(Path documentPath) {
         try {
-            var response = (InBodyConvertDocumentResponse) doclingService.convertFile(documentPath, OutputFormat.JSON);
+            var response = (InBodyConvertDocumentResponse) this.doclingService.convertFile(documentPath, OutputFormat.JSON);
             var doclingDoc = response.getDocument().getJsonContent();
             var fullText = buildFullText(doclingDoc);
             var provenance = buildProvenance(doclingDoc, fullText);
@@ -62,16 +62,14 @@ public class DoclingExtractor {
     }
 
     private String tableToText(TableItem table) {
-        var data = table.getData();
-        if ((data == null) || (data.getGrid() == null)) {
-            return "";
-        }
-
-        return data.getGrid().stream()
-            .map(row -> row.stream()
-                .map(cell -> Objects.requireNonNullElse(cell.getText(), ""))
-                .collect(Collectors.joining(" | ")))
-            .collect(Collectors.joining("\n"));
+        return Optional.of(table.getData())
+            .map(DoclingDocument.TableData::getGrid)
+            .map(grid -> grid.stream()
+                .map(row -> row.stream()
+                    .map(cell -> Objects.requireNonNullElse(cell.getText(), ""))
+                    .collect(Collectors.joining(" | ")))
+                .collect(Collectors.joining("\n")))
+            .orElse("");
     }
 
     private List<ProvenanceEntry> buildProvenance(DoclingDocument doc, String fullText) {
@@ -92,29 +90,26 @@ public class DoclingExtractor {
 
     private Optional<ProvenanceEntry> toProvenanceEntry(String itemText, String elementType,
                                                         List<ProvenanceItem> provItems, String fullText) {
-        if ((itemText == null) || itemText.isEmpty()) {
-            return Optional.empty();
-        }
+        return Optional.ofNullable(itemText)
+            .filter(text -> !text.isEmpty())
+            .map(fullText::indexOf)
+            .filter(startChar -> (startChar >= 0))
+            .map(startChar -> {
+                var pageNumber = provItems.stream()
+                    .map(ProvenanceItem::getPageNo)
+                    .findFirst()
+                    .orElse(null);
 
-        var startChar = fullText.indexOf(itemText);
-        if (startChar < 0) {
-            return Optional.empty();
-        }
-
-        var pageNumber = provItems.stream()
-            .map(ProvenanceItem::getPageNo)
-            .findFirst()
-            .orElse(null);
-
-        return Optional.of(
-            new ProvenanceEntry(startChar, startChar + itemText.length(), pageNumber, elementType, null));
+                return new ProvenanceEntry(startChar, startChar + itemText.length(), pageNumber, elementType, null);
+            });
     }
 
     public List<TextSegment> extractAndChunk(Path documentPath) {
         try {
-            var response = doclingService.chunkFileHybrid(documentPath, OutputFormat.JSON);
+            var response = this.doclingService.chunkFileHybrid(documentPath, OutputFormat.JSON);
 
-            return response.getChunks().stream()
+            return response.getChunks()
+                .stream()
                 .map(chunk -> {
                     var metadata = new Metadata()
                         .put("mode", Mode.DOCLING_HYBRID_CHUNK.name());

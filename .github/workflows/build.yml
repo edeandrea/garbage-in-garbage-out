@@ -32,15 +32,15 @@ jobs:
       - name: Pull Ollama models
         run: |
           docker exec ollama bash -c "\
-          ollama pull qwen3:1.7b && \
-          ollama pull nomic-embed-text && \
-          ollama ls"
+            ollama pull qwen3:1.7b && \
+            ollama pull nomic-embed-text && \
+            ollama ls"
       - name: Build and test
-        run: >-
-          ./mvnw -B verify
-          -Dquarkus.langchain4j.ollama.devservices.enabled=false
-          -Dquarkus.langchain4j.ollama.base-url=http://localhost:11434
-          -Dquarkus.langchain4j.ollama.chat-model.model-id=qwen3:1.7b
-          -Dquarkus.langchain4j.ollama.timeout=120s
-          -Duse.wiremock.docling=true
-          -Drun.planted-questions=true
+        run: |
+          ./mvnw -B verify \
+            -Dquarkus.langchain4j.ollama.devservices.enabled=false \
+            -Dquarkus.langchain4j.ollama.base-url=http://localhost:11434 \
+            -Dquarkus.langchain4j.ollama.chat-model.model-id=qwen3:1.7b \
+            -Dquarkus.langchain4j.ollama.timeout=120s \
+            -Duse.wiremock.docling=true \
+            -Drun.planted-questions=true

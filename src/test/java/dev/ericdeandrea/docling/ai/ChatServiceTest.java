@@ -2,15 +2,14 @@ package dev.ericdeandrea.docling.ai;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Duration;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import jakarta.inject.Inject;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkus.arc.Arc;
 import io.quarkus.test.junit.QuarkusTest;
 
 import dev.ericdeandrea.docling.model.Mode;
@@ -24,16 +23,6 @@ class ChatServiceTest {
     @Inject
     CurrentMode currentMode;
 
-    @BeforeEach
-    void activateSessionContext() {
-        Arc.container().sessionContext().activate();
-    }
-
-    @AfterEach
-    void deactivateSessionContext() {
-        Arc.container().sessionContext().deactivate();
-    }
-
     @Test
     void isInjectable() {
         assertThat(chatService).isNotNull();
@@ -41,37 +30,17 @@ class ChatServiceTest {
 
     @Test
     void chatStreamsEventsForEachMode() {
-        for (var mode : Mode.values()) {
-            currentMode.mode(mode);
+        Stream.of(Mode.values()).forEach(mode -> {
+            this.currentMode.mode(mode);
 
-            var events = chatService.chat(UUID.randomUUID(), "What is DocLayNet?")
+            var events = this.chatService.chat(UUID.randomUUID(), "What is DocLayNet?")
                 .collect().asList()
-                .await().indefinitely();
+                .await().atMost(Duration.ofMinutes(5));
 
             assertThat(events)
                 .as("Mode %s should produce chat events", mode)
                 .isNotEmpty();
-        }
+        });
     }
 
-    @Test
-    void requestScopedModeChangesPerCall() {
-        currentMode.mode(Mode.NAIVE);
-        var memoryId1 = UUID.randomUUID();
-
-        var events1 = chatService.chat(memoryId1, "What is DocLayNet?")
-            .collect().asList()
-            .await().indefinitely();
-
-        assertThat(events1).isNotEmpty();
-
-        currentMode.mode(Mode.DOCLING_HYBRID_CHUNK);
-        var memoryId2 = UUID.randomUUID();
-
-        var events2 = chatService.chat(memoryId2, "What is DocLayNet?")
-            .collect().asList()
-            .await().indefinitely();
-
-        assertThat(events2).isNotEmpty();
-    }
 }

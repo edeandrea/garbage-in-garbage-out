@@ -9,26 +9,26 @@ import io.quarkiverse.langchain4j.EmbeddingStoreName;
 
 import dev.ericdeandrea.docling.ai.ingestion.extraction.DoclingExtractor;
 import dev.ericdeandrea.docling.model.Mode;
-import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
-import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 
+/**
+ * Mode C pipeline: Docling structured extraction + server-side hybrid chunking.
+ * Produces self-describing chunks that preserve table structure, so the LLM can answer
+ * questions that require correlating column headers with data values.
+ */
 @ApplicationScoped
-class DoclingHybridIngestionPipeline implements IngestionPipeline {
+class DoclingHybridIngestionPipeline extends AbstractIngestionPipeline {
 
     private final DoclingExtractor doclingExtractor;
-    private final EmbeddingModel embeddingModel;
-    private final EmbeddingStore<TextSegment> store;
 
     DoclingHybridIngestionPipeline(
             DoclingExtractor doclingExtractor,
             EmbeddingModel embeddingModel,
             @EmbeddingStoreName("docling-hybrid") EmbeddingStore<TextSegment> store) {
+        super(embeddingModel, store);
         this.doclingExtractor = doclingExtractor;
-        this.embeddingModel = embeddingModel;
-        this.store = store;
     }
 
     @Override
@@ -37,22 +37,11 @@ class DoclingHybridIngestionPipeline implements IngestionPipeline {
     }
 
     @Override
-    public String collectionName() {
-        return Mode.DOCLING_HYBRID_CHUNK.storeName();
-    }
-
-    @Override
-    public List<TextSegment> processAndStore(Path documentPath) {
-        var segments = doclingExtractor.extractAndChunk(documentPath);
-
-        EmbeddingStoreIngestor.builder()
-            .embeddingStore(store)
-            .embeddingModel(embeddingModel)
-            .build()
-            .ingest(segments.stream()
-                .map(s -> Document.from(s.text(), s.metadata()))
-                .toList());
-
-        return segments;
+    List<TextSegment> buildSegments(Path documentPath) {
+        // Docling's hybrid chunker runs server-side and is structure-aware: it keeps table
+        // rows together as self-describing triplets (e.g. "All, FRCNN.R101 = 73.4") instead
+        // of splitting column headers from data values. This is the "insight out" step —
+        // the LLM can answer from the chunk alone without needing to correlate across chunks.
+        return this.doclingExtractor.extractAndChunk(documentPath);
     }
 }
