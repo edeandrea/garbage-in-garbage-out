@@ -105,6 +105,9 @@ phase, on purpose, so specs survive across sessions and context resets.
 ## Active specs
 
 - `specs/000-project-skeleton/` — Maven project layout, CI, Dependabot.
-  Status: Approved, implemented. Being updated to single-module structure.
+  Status: Approved, implemented (single-module structure).
 - `specs/001-three-mode-rag-demo/` — the core cold-open/verdict/advanced
-  RAG demo. Status: Approved, plan in progress.
+  RAG demo. Status: Approved, implemented. 61 decisions recorded in
+  `decisions.md`. Pending: true black-box IT via Playwright/WebSocket,
+  PR [#2691](https://github.com/quarkiverse/quarkus-langchain4j/pull/2691)
+  for Qdrant Dev Services create-collections simplification.

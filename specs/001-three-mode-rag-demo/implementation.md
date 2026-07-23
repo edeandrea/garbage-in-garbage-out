@@ -604,3 +604,19 @@ does YOLOv5x outperform Faster R-CNN overall?"
 Tests need session context activation
 (`Arc.container().sessionContext().activate()`) for the
 `@SessionScoped` `ChatService`.
+
+---
+
+## Task 23: Update README and CLAUDE.md
+
+### README updates
+- Prerequisites: add Ollama with models, Docker
+- Three modes explained with table
+- Demo flow (cold-open / verdict / advanced payoff)
+- Running: dev mode, tests, simulations
+- WireMock testing approach
+- Planted questions and expected behavior
+
+### CLAUDE.md updates
+- Active specs: update spec 001 status to implemented
+- Spec 000: remove "being updated" note

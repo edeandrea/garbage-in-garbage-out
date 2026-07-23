@@ -227,7 +227,7 @@ Status: Approved
        Adjust chunk size or select alternative questions if contrasts
        don't hold.
 
-- [ ] 23. **Update README and CLAUDE.md** — Update `README.md` with: how
+- [x] 23. **Update README and CLAUDE.md** — Update `README.md` with: how
        to run (prerequisites: Ollama with models, Docker for dev services),
        three modes explained, planted questions and expected answers, demo
        flow (cold-open / verdict / advanced payoff). Update `CLAUDE.md`'s
