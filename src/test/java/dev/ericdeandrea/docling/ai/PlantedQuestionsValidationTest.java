@@ -9,6 +9,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 import io.quarkus.arc.Arc;
 import io.quarkus.test.junit.QuarkusTest;
@@ -17,7 +18,8 @@ import dev.ericdeandrea.docling.model.ChatResponseEvent.ChunksRetrievedEvent;
 import dev.ericdeandrea.docling.model.Mode;
 
 @QuarkusTest
-class PlantedQuestionsValidationIT {
+@EnabledIfSystemProperty(named = "run.planted-questions", matches = "true")
+class PlantedQuestionsValidationTest {
 
     private static final String QUESTION_TABLE2 =
         "What does Table 2 show, and what network architecture won overall?";

@@ -1049,3 +1049,16 @@ Docling, is the Ollama service container still needed in CI?
 (`nomic-embed-text`), and the planted questions IT needs a real chat
 model (`qwen3:1.7b`). Removing it would break the embedding pipeline
 and the IT.
+
+---
+
+## 65. [2026-07-23 13:11 EDT]: Rename PlantedQuestionsValidationIT back to Test, gate with system property
+
+**Question:** `PlantedQuestionsValidationIT` uses `@Inject` and
+`Arc.container()` — it's not a true `@QuarkusIntegrationTest`. And it
+needs a real LLM, so it shouldn't run by default.
+
+**Decision:** Rename back to `PlantedQuestionsValidationTest`. Gate
+with `@EnabledIfSystemProperty(named = "run.planted-questions",
+matches = "true")`. Only runs when explicitly requested with
+`-Drun.planted-questions=true`. CI passes this property.

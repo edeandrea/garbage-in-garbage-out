@@ -53,13 +53,13 @@ Tests use WireMock to stub the LLM chat endpoint (no real LLM needed for most te
 
 Runs [`ChunkSizeSimulationTest`](src/test/java/dev/ericdeandrea/docling/ai/ingestion/ChunkSizeSimulationTest.java) and [`ModeAvsModeBTest`](src/test/java/dev/ericdeandrea/docling/ai/ingestion/ModeAvsModeBTest.java) — diagnostic tests that output chunk analysis to the console for manual inspection.
 
-### Integration tests
+### Planted questions validation
 
 ```shell
-./mvnw verify
+./mvnw test -Drun.planted-questions=true
 ```
 
-Runs the [`PlantedQuestionsValidationIT`](src/test/java/dev/ericdeandrea/docling/ai/PlantedQuestionsValidationIT.java), which needs a real LLM.
+Runs [`PlantedQuestionsValidationTest`](src/test/java/dev/ericdeandrea/docling/ai/PlantedQuestionsValidationTest.java), which needs a real LLM (not WireMock). Skipped by default.
 
 ### WireMock testing
 

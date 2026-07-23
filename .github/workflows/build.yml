@@ -43,3 +43,4 @@ jobs:
           -Dquarkus.langchain4j.ollama.chat-model.model-id=qwen3:1.7b
           -Dquarkus.langchain4j.ollama.timeout=120s
           -Duse.wiremock.docling=true
+          -Drun.planted-questions=true
