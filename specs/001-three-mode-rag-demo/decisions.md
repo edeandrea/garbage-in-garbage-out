@@ -929,6 +929,20 @@ OpenAI-compatible `/v1/chat/completions` endpoint.
 
 ---
 
+## 62. [2026-07-23 12:31 EDT]: WireMock for Docling Serve endpoints too
+
+**Question:** Tests calling Docling Serve account for ~6.5 min of CI
+time (3.5 min container startup + 3 min extraction calls). Can we
+stub these too?
+
+**Decision:** Capture real Docling responses and create WireMock stubs
+for both `/v1/convert/file` (conversion) and
+`/v1alpha/convert/chunked/file` (hybrid chunking). Eliminates the
+Docling Serve dev services container from surefire tests entirely.
+Real Docling integration tested locally or in a dedicated IT.
+
+---
+
 ## 61. [2026-07-23 11:36 EDT]: ChunkSizeSimulationTest as opt-in diagnostic
 
 **Question:** `ChunkSizeSimulationTest` is a diagnostic/tuning test,

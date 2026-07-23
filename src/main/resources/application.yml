@@ -49,6 +49,10 @@ quarkus:
 
 "%test":
   quarkus:
+    docling:
+      base-url: http://localhost:${quarkus.wiremock.devservices.port}
+      devservices:
+        enabled: false
     langchain4j:
       chat-model:
         provider: openai
