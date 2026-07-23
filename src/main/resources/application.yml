@@ -49,10 +49,6 @@ quarkus:
 
 "%test":
   quarkus:
-    docling:
-      base-url: http://localhost:${quarkus.wiremock.devservices.port}
-      devservices:
-        enabled: false
     langchain4j:
       chat-model:
         provider: openai
@@ -67,5 +63,7 @@ quarkus:
           temperature: 0
       ollama:
         timeout: 60s
+        chat-model:
+          model-id: qwen3:30b-a3b
         embedding-model:
           model-id: nomic-embed-text

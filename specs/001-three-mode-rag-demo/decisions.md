@@ -967,6 +967,23 @@ Real Docling integration tested locally or in a dedicated IT.
 
 ---
 
+## 63. [2026-07-23 12:55 EDT]: Gate WireMock Docling stubs via system property
+
+**Question:** Should WireMock Docling stubs be used everywhere (test
+profile), or only in CI?
+
+**Original decision:** System property `-Duse.wiremock.docling=true`.
+
+**Revised [2026-07-23 12:55 EDT]:** Use a `DoclingWiremockTestProfile`
+(`QuarkusTestProfile`) that overrides `quarkus.docling.base-url` to
+WireMock and disables dev services. Test classes that should use
+WireMock for Docling annotate with
+`@TestProfile(DoclingWiremockTestProfile.class)`. Tests without the
+annotation use real Docling dev services. This is per-test-class, not
+global — gives full control over which tests use stubs vs real Docling.
+
+---
+
 ## 61. [2026-07-23 11:36 EDT]: ChunkSizeSimulationTest as opt-in diagnostic
 
 **Question:** `ChunkSizeSimulationTest` is a diagnostic/tuning test,

@@ -4,11 +4,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.file.Path;
 
+import dev.ericdeandrea.docling.DoclingWiremockTestProfile;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
+@TestProfile(DoclingWiremockTestProfile.class)
 class DoclingExtractorTest {
 
     @Inject
