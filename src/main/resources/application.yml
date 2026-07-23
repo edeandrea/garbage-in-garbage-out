@@ -39,7 +39,9 @@ quarkus:
         provider: ollama
       embedding-model:
         provider: ollama
+      timeout: 60s
       ollama:
+        timeout: 60s
         chat-model:
           model-id: qwen3:30b-a3b
         embedding-model:

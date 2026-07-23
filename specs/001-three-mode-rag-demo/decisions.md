@@ -891,6 +891,22 @@ the board.
 
 ---
 
+## 59. [2026-07-23 11:24 EDT]: PlantedQuestionsValidationTest as @QuarkusIntegrationTest
+
+**Question:** Should tests that care about LLM output quality be
+integration tests (failsafe) vs unit tests (surefire)?
+
+**Analysis:** Only `PlantedQuestionsValidationTest` cares about what
+the LLM pipeline returns (chunk metadata quality per mode). All other
+tests just verify the pipeline produces output.
+
+**Decision:** Move `PlantedQuestionsValidationTest` to
+`@QuarkusIntegrationTest` (rename to `*IT.java` for failsafe).
+All other tests stay as `@QuarkusTest`. This allows skipping ITs in
+CI when the LLM model is unavailable on the runner.
+
+---
+
 ## 58. [2026-07-23 10:28 EDT]: CI model downgraded to qwen3:1.7b
 
 **Question:** CI Ollama container crashes with segfault running

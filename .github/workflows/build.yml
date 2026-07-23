@@ -41,3 +41,4 @@ jobs:
           -Dquarkus.langchain4j.ollama.devservices.enabled=false
           -Dquarkus.langchain4j.ollama.base-url=http://localhost:11434
           -Dquarkus.langchain4j.ollama.chat-model.model-id=qwen3:1.7b
+          -Dquarkus.langchain4j.ollama.timeout=120s
