@@ -936,10 +936,34 @@ time (3.5 min container startup + 3 min extraction calls). Can we
 stub these too?
 
 **Decision:** Capture real Docling responses and create WireMock stubs
-for both `/v1/convert/file` (conversion) and
-`/v1alpha/convert/chunked/file` (hybrid chunking). Eliminates the
+for `POST /v1/convert/source` (conversion) and
+`POST /v1/chunk/hybrid/source` (hybrid chunking). Eliminates the
 Docling Serve dev services container from surefire tests entirely.
 Real Docling integration tested locally or in a dedicated IT.
+
+**Implementation:**
+- Captured real responses via `CaptureDoclingResponsesTest` (gated
+  with `@EnabledIfSystemProperty(named = "capture.docling.responses")`)
+- Saved as `__files/docling-convert-response.json` (986KB) and
+  `__files/docling-chunk-response.json` (90KB)
+- WireMock stubs in `mappings/docling-convert.json` and
+  `mappings/docling-chunk-hybrid.json`
+- Test profile (`%test`): `quarkus.docling.base-url` pointed at
+  WireMock, `quarkus.docling.devservices.enabled=false`
+- Dev profile (`%dev`): unchanged, uses real Docling dev services
+
+**Test profile split (decisions 60 + 62 combined):**
+- `%dev`: both LLM and embedding use `ollama` provider, Docling uses
+  real dev services. Interactive development with real models.
+- `%test`: LLM chat uses `openai` provider pointed at WireMock (stub),
+  embedding uses `ollama` (real for meaningful vector search), Docling
+  pointed at WireMock (stub). Fast, deterministic surefire tests.
+
+**Speedup results:**
+- DoclingExtractorTest: 48s → 0.04s
+- DoclingHybridChunkingTest: 48s → 0.04s
+- ChunkSizeValidationTest: 97s → 0.2s
+- Docling Serve container startup eliminated (was 3.5 min)
 
 ---
 
