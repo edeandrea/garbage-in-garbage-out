@@ -1,4 +1,4 @@
-package dev.ericdeandrea.docling.ai.ingestion;
+package dev.ericdeandrea.docling.ai.ingestion.extraction;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -10,7 +10,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import dev.langchain4j.data.document.parser.apache.tika.ApacheTikaDocumentParser;
 
 @ApplicationScoped
-class TikaExtractor implements ExtractionStrategy {
+public class TikaExtractor implements ExtractionStrategy {
 
     private final ApacheTikaDocumentParser parser = new ApacheTikaDocumentParser();
 

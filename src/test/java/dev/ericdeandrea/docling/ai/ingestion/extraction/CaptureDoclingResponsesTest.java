@@ -1,4 +1,4 @@
-package dev.ericdeandrea.docling.ai.ingestion;
+package dev.ericdeandrea.docling.ai.ingestion.extraction;
 
 import java.io.IOException;
 import java.nio.file.Files;

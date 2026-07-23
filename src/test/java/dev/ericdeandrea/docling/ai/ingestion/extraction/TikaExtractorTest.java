@@ -1,4 +1,4 @@
-package dev.ericdeandrea.docling.ai.ingestion;
+package dev.ericdeandrea.docling.ai.ingestion.extraction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

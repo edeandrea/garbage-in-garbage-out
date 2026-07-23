@@ -1,6 +1,6 @@
-package dev.ericdeandrea.docling.ai.ingestion;
+package dev.ericdeandrea.docling.ai.ingestion.extraction;
 
-record ProvenanceEntry(
+public record ProvenanceEntry(
     int startChar,
     int endChar,
     Integer pageNumber,

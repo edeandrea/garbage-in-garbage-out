@@ -3,10 +3,12 @@ package dev.ericdeandrea.docling.ai.ingestion;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Instance;
 
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
@@ -15,50 +17,27 @@ import io.qdrant.client.QdrantClient;
 import io.qdrant.client.QdrantGrpcClient;
 import io.qdrant.client.grpc.Collections.Distance;
 import io.qdrant.client.grpc.Collections.VectorParams;
-import io.quarkiverse.langchain4j.EmbeddingStoreName;
 import io.quarkiverse.langchain4j.qdrant.runtime.QdrantEmbeddingStoreConfig;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 
 import dev.ericdeandrea.docling.ai.RagConfig;
-import dev.ericdeandrea.docling.model.Mode;
-import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.model.embedding.EmbeddingModel;
-import dev.langchain4j.store.embedding.EmbeddingStore;
-import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
+import dev.ericdeandrea.docling.ai.ingestion.pipeline.IngestionPipeline;
 
 @ApplicationScoped
 class IngestionStartup {
 
     private static final int VECTOR_SIZE = 768;
 
-    private final TikaExtractor tikaExtractor;
-    private final DoclingExtractor doclingExtractor;
-    private final NaiveChunker naiveChunker;
-    private final EmbeddingModel embeddingModel;
-    private final EmbeddingStore<TextSegment> naiveStore;
-    private final EmbeddingStore<TextSegment> doclingNaiveStore;
-    private final EmbeddingStore<TextSegment> doclingHybridStore;
+    private final Instance<IngestionPipeline> pipelines;
     private final RagConfig ragConfig;
     private final QdrantEmbeddingStoreConfig qdrantConfig;
 
     IngestionStartup(
-            TikaExtractor tikaExtractor,
-            DoclingExtractor doclingExtractor,
-            NaiveChunker naiveChunker,
-            EmbeddingModel embeddingModel,
-            @EmbeddingStoreName("naive") EmbeddingStore<TextSegment> naiveStore,
-            @EmbeddingStoreName("docling-naive") EmbeddingStore<TextSegment> doclingNaiveStore,
-            @EmbeddingStoreName("docling-hybrid") EmbeddingStore<TextSegment> doclingHybridStore,
+            Instance<IngestionPipeline> pipelines,
             RagConfig ragConfig,
             QdrantEmbeddingStoreConfig qdrantConfig) {
-        this.tikaExtractor = tikaExtractor;
-        this.doclingExtractor = doclingExtractor;
-        this.naiveChunker = naiveChunker;
-        this.embeddingModel = embeddingModel;
-        this.naiveStore = naiveStore;
-        this.doclingNaiveStore = doclingNaiveStore;
-        this.doclingHybridStore = doclingHybridStore;
+        this.pipelines = pipelines;
         this.ragConfig = ragConfig;
         this.qdrantConfig = qdrantConfig;
     }
@@ -75,18 +54,14 @@ class IngestionStartup {
 
             Log.infof("Starting ingestion for document: %s", documentPath);
 
+            var unis = pipelines.stream()
+                .map(pipeline -> Uni.createFrom().voidItem()
+                    .invoke(() -> runPipeline(pipeline, documentPath, client, existingCollections))
+                    .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()))
+                .toList();
+
             Uni.join()
-               .all(
-                    Uni.createFrom().voidItem()
-                        .invoke(() -> ingestModeA(documentPath, client, existingCollections))
-                        .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()),
-                    Uni.createFrom().voidItem()
-                        .invoke(() -> ingestModeB(documentPath, client, existingCollections))
-                        .runSubscriptionOn(Infrastructure.getDefaultWorkerPool()),
-                    Uni.createFrom().voidItem()
-                        .invoke(() -> ingestModeC(documentPath, client, existingCollections))
-                        .runSubscriptionOn(Infrastructure.getDefaultWorkerPool())
-                )
+                .all(unis)
                 .andCollectFailures()
                 .onFailure()
                 .invoke(t -> Log.error("Ingestion failed for one or more modes", t))
@@ -100,59 +75,26 @@ class IngestionStartup {
         }
     }
 
-    private void ingestModeA(Path documentPath, QdrantClient client, List<String> existingCollections) {
-        var collectionName = collectionName("naive");
+    private void runPipeline(IngestionPipeline pipeline, Path documentPath,
+                             QdrantClient client, List<String> existingCollections) {
+        var collectionName = resolveCollectionName(pipeline);
 
         if (existingCollections.contains(collectionName)) {
-            Log.infof("Mode A collection '%s' already exists, skipping ingestion", collectionName);
+            Log.infof("%s collection '%s' already exists, skipping ingestion",
+                pipeline.mode().displayLabel(), collectionName);
             return;
         }
 
-        Log.info("Ingesting Mode A (naive)...");
+        Log.infof("Ingesting %s...", pipeline.mode().displayLabel());
         createCollection(client, collectionName);
-        var result = tikaExtractor.extract(documentPath);
-        var segments = naiveChunker.chunk(result, Mode.NAIVE);
-        ingest(segments, naiveStore);
-        Log.infof("Mode A ingested %d segments", segments.size());
+        var segments = pipeline.processAndStore(documentPath);
+        Log.infof("%s ingested %d segments", pipeline.mode().displayLabel(), segments.size());
     }
 
-    private void ingestModeB(Path documentPath, QdrantClient client, List<String> existingCollections) {
-        var collectionName = collectionName("docling-naive");
-
-        if (existingCollections.contains(collectionName)) {
-            Log.infof("Mode B collection '%s' already exists, skipping ingestion", collectionName);
-            return;
-        }
-
-        Log.info("Ingesting Mode B (docling-naive)...");
-        createCollection(client, collectionName);
-        var result = doclingExtractor.extract(documentPath);
-        var segments = naiveChunker.chunk(result, Mode.DOCLING_NAIVE_CHUNK);
-        ingest(segments, doclingNaiveStore);
-        Log.infof("Mode B ingested %d segments", segments.size());
-    }
-
-    private void ingestModeC(Path documentPath, QdrantClient client, List<String> existingCollections) {
-        var collectionName = collectionName("docling-hybrid");
-
-        if (existingCollections.contains(collectionName)) {
-            Log.infof("Mode C collection '%s' already exists, skipping ingestion", collectionName);
-            return;
-        }
-
-        Log.info("Ingesting Mode C (docling-hybrid)...");
-        createCollection(client, collectionName);
-        var segments = doclingExtractor.extractAndChunk(documentPath);
-        ingest(segments, doclingHybridStore);
-        Log.infof("Mode C ingested %d segments", segments.size());
-    }
-
-    private String collectionName(String storeName) {
-        var namedConfig = qdrantConfig.namedConfig().get(storeName);
-        if (namedConfig != null) {
-            return namedConfig.collection().name();
-        }
-        return qdrantConfig.defaultConfig().collection().name();
+    private String resolveCollectionName(IngestionPipeline pipeline) {
+        return Optional.ofNullable(qdrantConfig.namedConfig().get(pipeline.collectionName()))
+            .map(namedConfig -> namedConfig.collection().name())
+            .orElseGet(() -> qdrantConfig.defaultConfig().collection().name());
     }
 
     private void createCollection(QdrantClient client, String collectionName) {
@@ -167,16 +109,5 @@ class IngestionStartup {
         catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException("Failed to create Qdrant collection: %s".formatted(collectionName), e);
         }
-    }
-
-    private void ingest(List<TextSegment> segments, EmbeddingStore<TextSegment> store) {
-        var ingestor = EmbeddingStoreIngestor.builder()
-            .embeddingStore(store)
-            .embeddingModel(embeddingModel)
-            .build();
-
-        ingestor.ingest(segments.stream()
-            .map(segment -> dev.langchain4j.data.document.Document.from(segment.text(), segment.metadata()))
-            .toList());
     }
 }

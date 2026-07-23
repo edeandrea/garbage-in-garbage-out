@@ -1,4 +1,4 @@
-package dev.ericdeandrea.docling.ai.ingestion;
+package dev.ericdeandrea.docling.ai.ingestion.chunking;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -6,6 +6,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import dev.ericdeandrea.docling.ai.ingestion.extraction.ExtractionResult;
+import dev.ericdeandrea.docling.ai.ingestion.extraction.ProvenanceEntry;
 import dev.ericdeandrea.docling.model.Mode;
 import dev.langchain4j.data.document.Document;
 

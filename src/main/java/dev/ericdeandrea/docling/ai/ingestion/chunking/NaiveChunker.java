@@ -1,4 +1,4 @@
-package dev.ericdeandrea.docling.ai.ingestion;
+package dev.ericdeandrea.docling.ai.ingestion.chunking;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -7,12 +7,14 @@ import java.util.stream.IntStream;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import dev.ericdeandrea.docling.ai.RagConfig;
+import dev.ericdeandrea.docling.ai.ingestion.extraction.ExtractionResult;
+import dev.ericdeandrea.docling.ai.ingestion.extraction.ProvenanceEntry;
 import dev.ericdeandrea.docling.model.Mode;
 import dev.langchain4j.data.document.splitter.DocumentBySentenceSplitter;
 import dev.langchain4j.data.segment.TextSegment;
 
 @ApplicationScoped
-class NaiveChunker implements ChunkingStrategy {
+public class NaiveChunker implements ChunkingStrategy {
 
     private final RagConfig ragConfig;
 

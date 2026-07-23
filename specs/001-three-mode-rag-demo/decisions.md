@@ -1052,6 +1052,28 @@ and the IT.
 
 ---
 
+## 70. [2026-07-23 14:52 EDT]: Explicit IngestionPipeline classes per mode
+
+**Question:** The mode→strategy mapping in `IngestionStartup` is
+implicit. The package structure doesn't make the A/B/C separation
+obvious.
+
+**Decision:** Extract explicit `IngestionPipeline` interface with
+three implementations:
+- `TikaNaiveIngestionPipeline` — Mode A
+- `DoclingNaiveIngestionPipeline` — Mode B
+- `DoclingHybridIngestionPipeline` — Mode C
+
+Each pipeline carries its `Mode`, collection name, and `process()`
+method. `IngestionStartup` iterates over all `IngestionPipeline`
+beans via `Instance<IngestionPipeline>`, checks the collection guard,
+and runs them in parallel. Adding a new mode = adding a new bean.
+
+**Naming:** ExtractorChunker pattern — reads as "Tika extraction with
+naive chunking."
+
+---
+
 ## 69. [2026-07-23 13:31 EDT]: Import order convention from import-order.txt
 
 **Question:** Import ordering should follow the project's

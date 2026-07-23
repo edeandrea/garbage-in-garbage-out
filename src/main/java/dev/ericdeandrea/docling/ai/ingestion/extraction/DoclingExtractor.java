@@ -1,4 +1,4 @@
-package dev.ericdeandrea.docling.ai.ingestion;
+package dev.ericdeandrea.docling.ai.ingestion.extraction;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -26,7 +26,7 @@ import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.data.segment.TextSegment;
 
 @ApplicationScoped
-class DoclingExtractor implements ExtractionStrategy {
+public class DoclingExtractor implements ExtractionStrategy {
 
     private final DoclingService doclingService;
 
@@ -111,7 +111,7 @@ class DoclingExtractor implements ExtractionStrategy {
             new ProvenanceEntry(startChar, startChar + itemText.length(), pageNumber, elementType, null));
     }
 
-    List<TextSegment> extractAndChunk(Path documentPath) {
+    public List<TextSegment> extractAndChunk(Path documentPath) {
         try {
             var response = doclingService.chunkFileHybrid(documentPath, OutputFormat.JSON);
 

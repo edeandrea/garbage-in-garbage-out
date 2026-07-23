@@ -1,19 +1,19 @@
-package dev.ericdeandrea.docling.ai.ingestion;
+package dev.ericdeandrea.docling.ai.ingestion.extraction;
 
 import java.util.List;
 
 import dev.langchain4j.data.document.Document;
 
-record ExtractionResult(
+public record ExtractionResult(
     Document document,
     List<ProvenanceEntry> provenance
 ) {
 
-    ExtractionResult(Document document) {
+    public ExtractionResult(Document document) {
         this(document, List.of());
     }
 
-    boolean hasProvenance() {
+    public boolean hasProvenance() {
         return !provenance.isEmpty();
     }
 }

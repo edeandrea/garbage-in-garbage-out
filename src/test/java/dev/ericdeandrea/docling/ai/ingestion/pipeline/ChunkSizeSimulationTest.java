@@ -1,4 +1,4 @@
-package dev.ericdeandrea.docling.ai.ingestion;
+package dev.ericdeandrea.docling.ai.ingestion.pipeline;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -10,6 +10,8 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 import io.quarkus.test.junit.QuarkusTest;
 
+import dev.ericdeandrea.docling.ai.ingestion.extraction.DoclingExtractor;
+import dev.ericdeandrea.docling.ai.ingestion.extraction.ExtractionResult;
 import dev.langchain4j.data.document.splitter.DocumentBySentenceSplitter;
 
 @QuarkusTest
