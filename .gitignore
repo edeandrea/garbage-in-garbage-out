@@ -43,6 +43,11 @@ nb-configuration.xml
 /.quarkus/cli/plugins/
 node_modules/
 
+# Vaadin
+src/main/frontend/generated/
+src/main/bundles/
+src/main/frontend/index.html
+
 easy-rag-embeddings.json
 .quinoa/
 /testing/ai-tester/ai-interactions.db
