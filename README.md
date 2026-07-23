@@ -51,7 +51,7 @@ Tests use WireMock to stub the LLM chat endpoint (no real LLM needed for most te
 ./mvnw test -Drun.simulations=true
 ```
 
-Runs `ChunkSizeSimulationTest` and `ModeAvsModeBTest` — diagnostic tests that output chunk analysis to the console for manual inspection.
+Runs [`ChunkSizeSimulationTest`](src/test/java/dev/ericdeandrea/docling/ai/ingestion/ChunkSizeSimulationTest.java) and [`ModeAvsModeBTest`](src/test/java/dev/ericdeandrea/docling/ai/ingestion/ModeAvsModeBTest.java) — diagnostic tests that output chunk analysis to the console for manual inspection.
 
 ### Integration tests
 
@@ -59,7 +59,15 @@ Runs `ChunkSizeSimulationTest` and `ModeAvsModeBTest` — diagnostic tests that 
 ./mvnw verify
 ```
 
-Runs the planted questions validation IT, which needs a real LLM.
+Runs the [`PlantedQuestionsValidationIT`](src/test/java/dev/ericdeandrea/docling/ai/PlantedQuestionsValidationIT.java), which needs a real LLM.
+
+### WireMock testing
+
+Tests use [WireMock](https://docs.quarkiverse.io/quarkus-wiremock/dev/index.html) for fast, deterministic test execution:
+
+- **LLM chat** — always stubbed in test profile via [`openai-chat-completions.json`](src/test/resources/mappings/openai-chat-completions.json). Real Ollama not needed for chat in tests.
+- **Docling Serve** — conditionally stubbed via [`DoclingWiremockTestProfile`](src/test/java/dev/ericdeandrea/docling/DoclingWiremockTestProfile.java). Pass `-Duse.wiremock.docling=true` to use stubs (CI does this); omit for real Docling (local default).
+- **Embeddings** — always real Ollama (via dev services). Needed for meaningful vector search.
 
 ## Architecture
 
@@ -72,7 +80,18 @@ dev.ericdeandrea.docling
 └── ui/                  # Vaadin chat views
 ```
 
-The AI and UI layers are decoupled via the `model` package. LangChain4j types never cross into the UI layer.
+The AI and UI layers are decoupled via the [`model`](src/main/java/dev/ericdeandrea/docling/model/) package. LangChain4j types never cross into the UI layer. [`MapStruct mappers`](src/main/java/dev/ericdeandrea/docling/mapping/ChunkMapper.java) handle conversion at the boundary.
+
+### Key classes
+
+- [`AssistantService`](src/main/java/dev/ericdeandrea/docling/ai/AssistantService.java) — public chat API; maps LangChain4j events to model types
+- [`ChatService`](src/main/java/dev/ericdeandrea/docling/ai/ChatService.java) — package-private `@RegisterAiService` with RAG streaming
+- [`ModeAwareRetrievalAugmentor`](src/main/java/dev/ericdeandrea/docling/ai/ModeAwareRetrievalAugmentor.java) — selects Qdrant collection per mode
+- [`IngestionStartup`](src/main/java/dev/ericdeandrea/docling/ai/ingestion/IngestionStartup.java) — startup ingestion with collection-existence guard
+- [`TikaExtractor`](src/main/java/dev/ericdeandrea/docling/ai/ingestion/TikaExtractor.java) / [`DoclingExtractor`](src/main/java/dev/ericdeandrea/docling/ai/ingestion/DoclingExtractor.java) — extraction strategies
+- [`NaiveChunker`](src/main/java/dev/ericdeandrea/docling/ai/ingestion/NaiveChunker.java) — sentence splitter + context enrichment
+- [`ChatView`](src/main/java/dev/ericdeandrea/docling/ui/ChatView.java) — Vaadin multi-panel layout with toggle buttons
+- [`ChatPanel`](src/main/java/dev/ericdeandrea/docling/ui/ChatPanel.java) — per-mode chat + chunk display panel
 
 ## Planted Questions
 

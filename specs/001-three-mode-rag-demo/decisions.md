@@ -1037,3 +1037,15 @@ skeleton leftovers — an empty CDI bean and its smoke test. No longer
 needed now that real beans exist.
 
 **Decision:** Delete both files.
+
+---
+
+## 64. [2026-07-23 13:09 EDT]: Keep Ollama service container in CI
+
+**Question:** With WireMock handling LLM chat and (conditionally)
+Docling, is the Ollama service container still needed in CI?
+
+**Decision:** Keep it. Embeddings still need real Ollama
+(`nomic-embed-text`), and the planted questions IT needs a real chat
+model (`qwen3:1.7b`). Removing it would break the embedding pipeline
+and the IT.

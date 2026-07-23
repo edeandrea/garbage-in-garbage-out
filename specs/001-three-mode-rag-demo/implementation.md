@@ -620,3 +620,31 @@ Tests need session context activation
 ### CLAUDE.md updates
 - Active specs: update spec 001 status to implemented
 - Spec 000: remove "being updated" note
+
+---
+
+## Post-implementation: WireMock optimization
+
+### WireMock for LLM chat (decision 60)
+
+Chat endpoint (`/v1/chat/completions`) always stubbed in `%test`
+profile. Streaming SSE response in
+[`openai-chat-completions.json`](../../src/test/resources/mappings/openai-chat-completions.json).
+
+### WireMock for Docling Serve (decisions 62-63)
+
+Docling endpoints (`/v1/convert/source`, `/v1/chunk/hybrid/source`)
+conditionally stubbed via
+[`DoclingWiremockTestProfile`](../../src/test/java/dev/ericdeandrea/docling/DoclingWiremockTestProfile.java).
+
+- With `-Duse.wiremock.docling=true` (CI): stubs used, no container
+- Without (local): real Docling dev services
+
+Canned responses captured via
+[`CaptureDoclingResponsesTest`](../../src/test/java/dev/ericdeandrea/docling/ai/ingestion/CaptureDoclingResponsesTest.java)
+(gated with `-Dcapture.docling.responses=true`).
+
+Applied to:
+- [`DoclingExtractorTest`](../../src/test/java/dev/ericdeandrea/docling/ai/ingestion/DoclingExtractorTest.java)
+- [`DoclingHybridChunkingTest`](../../src/test/java/dev/ericdeandrea/docling/ai/ingestion/DoclingHybridChunkingTest.java)
+- [`ChunkSizeValidationTest`](../../src/test/java/dev/ericdeandrea/docling/ai/ingestion/ChunkSizeValidationTest.java)
