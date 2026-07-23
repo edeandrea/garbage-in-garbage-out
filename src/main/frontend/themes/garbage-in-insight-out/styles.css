@@ -1,0 +1,5 @@
+vaadin-message.highlighted {
+    background-color: var(--lumo-primary-color-10pct);
+    border-left: 3px solid var(--lumo-primary-color);
+    transition: background-color 0.3s ease;
+}

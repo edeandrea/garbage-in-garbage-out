@@ -3,11 +3,16 @@ package dev.ericdeandrea.docling.ui;
 import java.util.EnumMap;
 import java.util.Map;
 
+import com.vaadin.flow.component.AttachEvent;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.page.ColorScheme;
 import com.vaadin.flow.router.Route;
 import dev.ericdeandrea.docling.ai.AssistantService;
 import dev.ericdeandrea.docling.model.Mode;
@@ -19,6 +24,7 @@ public class ChatView extends VerticalLayout {
     private final Map<Mode, Button> toggleButtons = new EnumMap<>(Mode.class);
     private final HorizontalLayout panelContainer;
     private final AssistantService assistantService;
+    private boolean isDarkMode;
 
     public ChatView(AssistantService assistantService) {
         this.assistantService = assistantService;
@@ -40,7 +46,7 @@ public class ChatView extends VerticalLayout {
     private HorizontalLayout createToolbar() {
         var toolbar = new HorizontalLayout();
         toolbar.setWidthFull();
-        toolbar.setAlignItems(Alignment.CENTER);
+        toolbar.setAlignItems(FlexComponent.Alignment.CENTER);
         toolbar.add(new H2("Garbage In, Insight Out"));
 
         for (var mode : Mode.values()) {
@@ -49,7 +55,29 @@ public class ChatView extends VerticalLayout {
             toolbar.add(button);
         }
 
+        var themeToggle = new Button(VaadinIcon.ADJUST.create(), event -> toggleTheme());
+        themeToggle.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        themeToggle.setTooltipText("Toggle light/dark mode");
+
+        var spacer = new HorizontalLayout();
+        spacer.setWidthFull();
+        toolbar.add(spacer, themeToggle);
+        toolbar.expand(spacer);
+
         return toolbar;
+    }
+
+    private void toggleTheme() {
+        isDarkMode = !isDarkMode;
+        UI.getCurrent().getPage().setColorScheme(
+            isDarkMode ? ColorScheme.Value.DARK : ColorScheme.Value.LIGHT
+        );
+    }
+
+    @Override
+    protected void onAttach(AttachEvent attachEvent) {
+        super.onAttach(attachEvent);
+        attachEvent.getUI().getPage().setColorScheme(ColorScheme.Value.LIGHT_DARK);
     }
 
     void toggleMode(Mode mode) {

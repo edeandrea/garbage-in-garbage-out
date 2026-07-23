@@ -888,3 +888,23 @@ round number. Most recent round's rows appear at the top.
 `LumoUtility.Whitespace.PRE_WRAP`) instead of raw CSS string literals
 wherever Vaadin provides them. Prefer constants over strings across
 the board.
+
+---
+
+## 55. [2026-07-23 10:05 EDT]: Add light/dark mode toggle, default to system
+
+**Question:** Should the UI support light/dark mode?
+
+**Decision:** Add a toggle button to the toolbar. Default to system
+preference (`prefers-color-scheme`). Use Vaadin's built-in
+`Lumo.DARK`/`Lumo.LIGHT` theme variant.
+
+---
+
+## 56. [2026-07-23 10:05 EDT]: Remove DoclingDemoApp placeholder
+
+**Context:** `DoclingDemoApp` and `DoclingDemoAppTest` are spec 000
+skeleton leftovers — an empty CDI bean and its smoke test. No longer
+needed now that real beans exist.
+
+**Decision:** Delete both files.
