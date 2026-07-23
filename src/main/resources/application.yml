@@ -1,4 +1,8 @@
 quarkus:
+  log:
+    category:
+      "org.apache.pdfbox":
+        level: ERROR
   langchain4j:
     chat-model:
       provider: openai

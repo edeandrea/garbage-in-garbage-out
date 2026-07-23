@@ -111,6 +111,10 @@
             <artifactId>slf4j-jboss-logmanager</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.jboss.logmanager</groupId>
+            <artifactId>log4j2-jboss-logmanager</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
             <version>${mapstruct.version}</version>

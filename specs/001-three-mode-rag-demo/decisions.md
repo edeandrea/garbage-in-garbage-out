@@ -1052,6 +1052,18 @@ and the IT.
 
 ---
 
+## 66. [2026-07-23 13:14 EDT]: Suppress noisy log warnings
+
+**Question:** PDFBox font warnings and a Log4j "no provider" error
+clutter the test output.
+
+**Decision:** Add `log4j2-jboss-logmanager` dependency to bridge Log4j
+to JBoss Logging. Set `quarkus.log.category."org.apache.pdfbox".level`
+to `ERROR` in application.yml to suppress PDFBox font warnings. Leave
+the Vaadin I18NProvider info message as-is.
+
+---
+
 ## 65. [2026-07-23 13:11 EDT]: Rename PlantedQuestionsValidationIT back to Test, gate with system property
 
 **Question:** `PlantedQuestionsValidationIT` uses `@Inject` and
