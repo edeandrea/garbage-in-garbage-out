@@ -32,7 +32,7 @@ quarkus:
         collection:
           name: docling_hybrid_chunk
 
-"%dev,test":
+"%dev":
   quarkus:
     langchain4j:
       chat-model:
@@ -44,5 +44,24 @@ quarkus:
         timeout: 60s
         chat-model:
           model-id: qwen3:30b-a3b
+        embedding-model:
+          model-id: nomic-embed-text
+
+"%test":
+  quarkus:
+    langchain4j:
+      chat-model:
+        provider: openai
+      embedding-model:
+        provider: ollama
+      timeout: 60s
+      openai:
+        base-url: http://localhost:${quarkus.wiremock.devservices.port}/v1
+        api-key: none
+        chat-model:
+          model-name: stub
+          temperature: 0
+      ollama:
+        timeout: 60s
         embedding-model:
           model-id: nomic-embed-text

@@ -23,6 +23,11 @@ built and maintained by the docling-java / quarkus-docling project lead.
 - Integration tests: every module must run failsafe integration tests
   during `verify`. Never set `<skipITs>true</skipITs>` or otherwise
   skip integration tests.
+- Diagnostic tests: `ChunkSizeSimulationTest` and `ModeAvsModeBTest`
+  are gated with `@EnabledIfSystemProperty(named = "run.simulations")`.
+  Run with `-Drun.simulations=true` when tuning chunk sizes. They are
+  skipped by default — they produce console output for manual
+  inspection, not assertions.
 - Dependencies: kept current via Dependabot.
 - CI: every PR builds and runs the full test suite via GitHub Actions
   before merge.

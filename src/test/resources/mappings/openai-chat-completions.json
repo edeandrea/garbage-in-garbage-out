@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPathPattern": "/v1/chat/completions"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "text/event-stream"
+    },
+    "body": "data: {\"id\":\"chatcmpl-stub\",\"object\":\"chat.completion.chunk\",\"created\":1700000000,\"model\":\"stub\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"This is\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-stub\",\"object\":\"chat.completion.chunk\",\"created\":1700000000,\"model\":\"stub\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\" a stubbed response.\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-stub\",\"object\":\"chat.completion.chunk\",\"created\":1700000000,\"model\":\"stub\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]\n\n"
+  }
+}

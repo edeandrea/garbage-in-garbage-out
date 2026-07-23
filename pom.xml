@@ -27,6 +27,7 @@
         <quarkus-docling.version>1.4.0</quarkus-docling.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <browserless-test.version>1.1.1</browserless-test.version>
+        <quarkus-wiremock.version>1.6.3</quarkus-wiremock.version>
         <assertj.version>3.27.7</assertj.version>
     </properties>
 
@@ -127,6 +128,18 @@
         <dependency>
             <groupId>com.vaadin</groupId>
             <artifactId>browserless-test-quarkus</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkiverse.wiremock</groupId>
+            <artifactId>quarkus-wiremock</artifactId>
+            <version>${quarkus-wiremock.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkiverse.wiremock</groupId>
+            <artifactId>quarkus-wiremock-test</artifactId>
+            <version>${quarkus-wiremock.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

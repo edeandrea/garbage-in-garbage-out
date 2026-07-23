@@ -907,17 +907,25 @@ CI when the LLM model is unavailable on the runner.
 
 ---
 
-## 60. [2026-07-23 11:36 EDT]: WireMock for LLM-independent tests
+## 60. [2026-07-23 11:36 EDT]: WireMock for LLM chat, real Ollama for embeddings
 
 **Question:** Most tests don't care about the LLM's actual output —
 they just need the pipeline to produce something. Can we avoid the
-Ollama dependency for these tests?
+Ollama dependency for the chat model in these tests?
 
-**Decision:** Use WireMock (via `quarkus-wiremock` dev service) to stub
-Ollama endpoints (`/api/chat`, `/api/embed`) with canned responses for
-tests that don't depend on LLM quality. Only the planted questions IT
-needs a real LLM. This makes the majority of tests fast, deterministic,
-and CI-friendly.
+**Decision:** Stub chat only, keep real embeddings. In test profile,
+split providers: chat model uses the `openai` provider pointed at
+WireMock's URL (canned chat responses), embedding model stays on real
+Ollama (needed for meaningful vector search). WireMock stubs the
+OpenAI-compatible `/v1/chat/completions` endpoint.
+
+**Approach:**
+- Add `quarkus-wiremock` (provided) + `quarkus-wiremock-test` (test)
+- In `%test` profile: `chat-model.provider=openai`,
+  `openai.base-url=http://localhost:${wiremock.port}/v1`,
+  `embedding-model.provider=ollama` (real Ollama dev services)
+- WireMock stub returns a canned chat completion response
+- Tests that need real LLM output (planted questions IT) skip WireMock
 
 ---
 
