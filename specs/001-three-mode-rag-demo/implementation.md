@@ -570,3 +570,37 @@ Chunk display is a separate component updated from
 
 `QuarkusBrowserlessTest` verifying panels can be added/removed
 independently.
+
+---
+
+## Task 22: End-to-end planted questions validation
+
+### Approach
+
+Write `@QuarkusTest`s that call `AssistantService.chat()` for each mode
+with the planted questions from the spec. Assert on the
+`ChunksRetrievedEvent` content, not LLM generation
+([decision 25](decisions.md), [decision 31](decisions.md)).
+
+### Planted questions tested
+
+**Set 1 (A vs B):** Question 2 from spec — "What does Table 2 show,
+and what network architecture won overall?"
+
+**Set 2 (B vs C):** Question 5 from spec — "By how many mAP points
+does YOLOv5x outperform Faster R-CNN overall?"
+
+### Assertions
+
+- Mode A: retrieved chunks contain garbled/incomplete table data
+  (no pipe separators, unrelated text spliced in)
+- Mode B: retrieved chunks contain clean table data (pipe-separated)
+  but column headers separated from values
+- Mode C: retrieved chunks contain self-describing triplets with
+  model names inline (e.g., `FRCNN.R101 = 73.4`)
+
+### Session context
+
+Tests need session context activation
+(`Arc.container().sessionContext().activate()`) for the
+`@SessionScoped` `ChatService`.

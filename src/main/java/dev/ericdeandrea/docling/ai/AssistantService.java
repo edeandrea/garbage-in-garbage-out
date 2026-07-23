@@ -46,7 +46,7 @@ public class AssistantService {
             case ContentFetchedEvent fetched -> {
                 var chunks = fetched.getContent().stream()
                     .map(content -> {
-                        var score = content.metadata() != null
+                        var score = (content.metadata() != null)
                             ? (Double) content.metadata().getOrDefault(ContentMetadata.SCORE, 0.0)
                             : 0.0;
                         return chunkMapper.toRetrievedChunk(content.textSegment(), score, Instant.now());
@@ -54,8 +54,9 @@ public class AssistantService {
                     .toList();
                 yield new ChunksRetrievedEvent(chunks);
             }
-            case ChatCompletedEvent completed -> new CompletedEvent();
-            default -> throw new IllegalStateException("Unexpected event type: " + event.getEventType());
+            case ChatCompletedEvent ignored -> new CompletedEvent();
+            default -> throw new IllegalStateException(
+                "Unexpected event type: %s".formatted(event.getEventType()));
         };
     }
 }

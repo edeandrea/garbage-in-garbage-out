@@ -28,8 +28,8 @@ jobs:
       - name: Pull Ollama models
         run: |
           docker exec ollama bash -c "\
-          ollama pull qwen3:4b && \
+          ollama pull qwen3:1.7b && \
           ollama pull nomic-embed-text && \
           ollama ls"
       - name: Build and test
-        run: ./mvnw -B verify -Dquarkus.langchain4j.ollama.chat-model.model-id=qwen3:4b
+        run: ./mvnw -B verify -Dquarkus.langchain4j.ollama.chat-model.model-id=qwen3:1.7b

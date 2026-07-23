@@ -66,13 +66,12 @@ class NaiveChunker implements ChunkingStrategy {
     }
 
     private void enrichWithSurroundingContext(List<TextSegment> segments, int before, int after) {
-        IntStream.range(0, segments.size())
-            .forEach(i -> {
-                var extendedContent = IntStream.rangeClosed(i - before, i + after)
-                    .filter(j -> j >= 0 && j < segments.size())
-                    .mapToObj(j -> segments.get(j).text())
-                    .collect(Collectors.joining(" "));
-                segments.get(i).metadata().put("extended_content", extendedContent);
-            });
+        for (int i = 0; i < segments.size(); i++) {
+            var extendedContent = IntStream.rangeClosed(i - before, i + after)
+                .filter(j -> j >= 0 && j < segments.size())
+                .mapToObj(j -> segments.get(j).text())
+                .collect(Collectors.joining(" "));
+            segments.get(i).metadata().put("extended_content", extendedContent);
+        }
     }
 }

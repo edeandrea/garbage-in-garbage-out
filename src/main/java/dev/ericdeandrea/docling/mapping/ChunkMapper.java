@@ -3,27 +3,35 @@ package dev.ericdeandrea.docling.mapping;
 import java.time.Instant;
 
 import org.mapstruct.Mapper;
-import org.mapstruct.MappingConstants;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingConstants.ComponentModel;
 
 import dev.ericdeandrea.docling.model.ChunkMetadata;
 import dev.ericdeandrea.docling.model.Mode;
 import dev.ericdeandrea.docling.model.RetrievedChunk;
 import dev.langchain4j.data.segment.TextSegment;
 
-@Mapper(componentModel = MappingConstants.ComponentModel.CDI)
+@Mapper(componentModel = ComponentModel.CDI)
 public interface ChunkMapper {
 
-    default RetrievedChunk toRetrievedChunk(TextSegment segment, double relevanceScore, Instant timestamp) {
-        var metadata = segment.metadata();
-        var pageNumber = metadata.getInteger("page_number");
-        var elementType = metadata.getString("element_type");
-        var elementLabel = metadata.getString("element_label");
-        var modeString = metadata.getString("mode");
-        var mode = modeString != null ? Mode.valueOf(modeString) : null;
+    @Mapping(target = "text", expression = "java(segment.text())")
+    @Mapping(target = "metadata", expression = "java(toMetadata(segment, relevanceScore, timestamp))")
+    RetrievedChunk toRetrievedChunk(TextSegment segment, double relevanceScore, Instant timestamp);
 
-        return new RetrievedChunk(
-            segment.text(),
-            new ChunkMetadata(pageNumber, elementType, elementLabel, mode, relevanceScore, timestamp)
+    default ChunkMetadata toMetadata(TextSegment segment, double relevanceScore, Instant timestamp) {
+        var metadata = segment.metadata();
+
+        return new ChunkMetadata(
+            metadata.getInteger("page_number"),
+            metadata.getString("element_type"),
+            metadata.getString("element_label"),
+            toMode(metadata.getString("mode")),
+            relevanceScore,
+            timestamp
         );
+    }
+
+    default Mode toMode(String modeString) {
+        return (modeString != null) ? Mode.valueOf(modeString) : null;
     }
 }

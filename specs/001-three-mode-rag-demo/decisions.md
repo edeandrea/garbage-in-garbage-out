@@ -891,6 +891,31 @@ the board.
 
 ---
 
+## 58. [2026-07-23 10:28 EDT]: CI model downgraded to qwen3:1.7b
+
+**Question:** CI Ollama container crashes with segfault running
+`qwen3:4b` on GitHub Actions runner. Likely a memory issue.
+
+**Decision:** Downgrade CI model to `qwen3:1.7b` (~1.4GB). Tests
+assert on retrieval, not generation quality, so model capability
+doesn't matter. Updated `build.yml` and the `docker exec pull`
+command.
+
+---
+
+## 57. [2026-07-23 10:17 EDT]: Fix ChunkMapper to use @Mapping expressions
+
+**Question:** The ChunkMapper uses a `default` method with all
+hand-written mapping. MapStruct generates nothing — the `@Mapper` is
+just for CDI bean creation.
+
+**Decision:** Rewrite using `@Mapping` with `expression` attributes
+so MapStruct generates the implementation. The source is a
+`TextSegment` + additional params (`relevanceScore`, `timestamp`).
+Metadata keys are extracted via expressions.
+
+---
+
 ## 55. [2026-07-23 10:05 EDT]: Add light/dark mode toggle, default to system
 
 **Question:** Should the UI support light/dark mode?

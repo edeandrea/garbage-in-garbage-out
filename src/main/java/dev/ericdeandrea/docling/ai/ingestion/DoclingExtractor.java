@@ -3,10 +3,14 @@ package dev.ericdeandrea.docling.ai.ingestion;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import ai.docling.core.DoclingDocument;
+import ai.docling.core.DoclingDocument.BaseTextItem;
 import ai.docling.core.DoclingDocument.ProvenanceItem;
 import ai.docling.core.DoclingDocument.TableItem;
 import ai.docling.serve.api.convert.request.options.OutputFormat;
@@ -34,33 +38,25 @@ class DoclingExtractor implements ExtractionStrategy {
             var doclingDoc = response.getDocument().getJsonContent();
             var fullText = buildFullText(doclingDoc);
             var provenance = buildProvenance(doclingDoc, fullText);
-            var document = Document.from(fullText);
 
-            return new ExtractionResult(document, provenance);
+            return new ExtractionResult(Document.from(fullText), provenance);
         }
         catch (IOException e) {
-            throw new UncheckedIOException("Failed to extract document with Docling: %s".formatted(documentPath), e);
+            throw new UncheckedIOException(
+                "Failed to extract document with Docling: %s".formatted(documentPath), e);
         }
     }
 
     private String buildFullText(DoclingDocument doc) {
-        var sb = new StringBuilder();
+        var textParts = doc.getTexts().stream()
+            .map(BaseTextItem::getText);
 
-        for (var item : doc.getTexts()) {
-            if (!sb.isEmpty()) {
-                sb.append("\n\n");
-            }
-            sb.append(item.getText());
-        }
+        var tableParts = doc.getTables().stream()
+            .map(this::tableToText)
+            .filter(text -> !text.isEmpty());
 
-        for (var table : doc.getTables()) {
-            if (!sb.isEmpty()) {
-                sb.append("\n\n");
-            }
-            sb.append(table.getData() != null ? tableToText(table) : "");
-        }
-
-        return sb.toString();
+        return Stream.concat(textParts, tableParts)
+            .collect(Collectors.joining("\n\n"));
     }
 
     private String tableToText(TableItem table) {
@@ -69,53 +65,47 @@ class DoclingExtractor implements ExtractionStrategy {
             return "";
         }
 
-        var sb = new StringBuilder();
-        for (var row : data.getGrid()) {
-            var cells = row.stream()
-                .map(cell -> cell.getText() != null ? cell.getText() : "")
-                .toList();
-            sb.append(String.join(" | ", cells));
-            sb.append("\n");
-        }
-
-        return sb.toString();
+        return data.getGrid().stream()
+            .map(row -> row.stream()
+                .map(cell -> Objects.requireNonNullElse(cell.getText(), ""))
+                .collect(Collectors.joining(" | ")))
+            .collect(Collectors.joining("\n"));
     }
 
     private List<ProvenanceEntry> buildProvenance(DoclingDocument doc, String fullText) {
-        var entries = new ArrayList<ProvenanceEntry>();
+        var textEntries = doc.getTexts().stream()
+            .map(item -> toProvenanceEntry(item.getText(), item.getLabel().toString(), item.getProv(), fullText));
 
-        for (var item : doc.getTexts()) {
-            addProvenanceForItem(entries, item.getText(), item.getLabel().toString(), item.getProv(), fullText);
-        }
+        var tableEntries = doc.getTables().stream()
+            .map(table -> toProvenanceEntry(
+                tableToText(table),
+                Objects.requireNonNullElse(table.getLabel(), "TABLE"),
+                table.getProv(),
+                fullText));
 
-        for (var table : doc.getTables()) {
-            var tableText = table.getData() != null ? tableToText(table) : "";
-            var label = table.getLabel() != null ? table.getLabel() : "TABLE";
-            addProvenanceForItem(entries, tableText, label, table.getProv(), fullText);
-        }
-
-        return List.copyOf(entries);
+        return Stream.concat(textEntries, tableEntries)
+            .flatMap(Optional::stream)
+            .toList();
     }
 
-    private void addProvenanceForItem(List<ProvenanceEntry> entries, String itemText,
-                                      String elementType, List<ProvenanceItem> provItems,
-                                      String fullText) {
+    private Optional<ProvenanceEntry> toProvenanceEntry(String itemText, String elementType,
+                                                        List<ProvenanceItem> provItems, String fullText) {
         if (itemText == null || itemText.isEmpty()) {
-            return;
+            return Optional.empty();
         }
 
         var startChar = fullText.indexOf(itemText);
         if (startChar < 0) {
-            return;
+            return Optional.empty();
         }
-        var endChar = startChar + itemText.length();
 
         var pageNumber = provItems.stream()
             .map(ProvenanceItem::getPageNo)
             .findFirst()
             .orElse(null);
 
-        entries.add(new ProvenanceEntry(startChar, endChar, pageNumber, elementType, null));
+        return Optional.of(
+            new ProvenanceEntry(startChar, startChar + itemText.length(), pageNumber, elementType, null));
     }
 
     List<TextSegment> extractAndChunk(Path documentPath) {
@@ -140,7 +130,8 @@ class DoclingExtractor implements ExtractionStrategy {
                 .toList();
         }
         catch (IOException e) {
-            throw new UncheckedIOException("Failed to chunk document with Docling: %s".formatted(documentPath), e);
+            throw new UncheckedIOException(
+                "Failed to chunk document with Docling: %s".formatted(documentPath), e);
         }
     }
 }

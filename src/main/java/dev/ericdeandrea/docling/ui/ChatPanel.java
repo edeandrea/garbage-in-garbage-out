@@ -35,7 +35,7 @@ class ChatPanel extends VerticalLayout {
     private final ArrayList<MessageListItem> items = new ArrayList<>();
     private final ArrayList<ChunkRow> allChunkRows = new ArrayList<>();
     private final Map<Integer, MessageListItem> roundToAssistantItem = new HashMap<>();
-    private UUID conversationId = UUID.randomUUID();
+    private final UUID conversationId = UUID.randomUUID();
     private int currentRound;
     private MessageListItem currentAssistantItem;
 
@@ -71,21 +71,21 @@ class ChatPanel extends VerticalLayout {
             .setHeader("#").setFlexGrow(0).setWidth("40px");
         grid.addColumn(row -> "%.2f".formatted(row.chunk().metadata().relevanceScore()))
             .setHeader("Score").setFlexGrow(0).setWidth("70px");
-        grid.addColumn(row -> row.chunk().metadata().pageNumber() != null
+        grid.addColumn(row -> (row.chunk().metadata().pageNumber() != null)
                 ? row.chunk().metadata().pageNumber().toString() : "—")
             .setHeader("Page").setFlexGrow(0).setWidth("60px");
-        grid.addColumn(row -> row.chunk().metadata().elementType() != null
+        grid.addColumn(row -> (row.chunk().metadata().elementType() != null)
                 ? row.chunk().metadata().elementType() : "—")
             .setHeader("Type").setFlexGrow(0).setWidth("100px");
-        grid.addColumn(row -> row.chunk().metadata().elementLabel() != null
+        grid.addColumn(row -> (row.chunk().metadata().elementLabel() != null)
                 ? row.chunk().metadata().elementLabel() : "")
             .setHeader("Label").setFlexGrow(0).setWidth("90px");
-        grid.addColumn(row -> row.chunk().metadata().timestamp() != null
+        grid.addColumn(row -> (row.chunk().metadata().timestamp() != null)
                 ? row.chunk().metadata().timestamp().toString() : "")
             .setHeader("Time").setFlexGrow(0).setWidth("110px");
         grid.addColumn(row -> {
                 var text = row.chunk().text();
-                return text.length() > 80 ? text.substring(0, 80) + "..." : text;
+                return (text.length() > 80) ? "%s...".formatted(text.substring(0, 80)) : text;
             })
             .setHeader("Preview").setFlexGrow(1);
 
@@ -123,11 +123,12 @@ class ChatPanel extends VerticalLayout {
 
         var round = currentRound;
         assistantService.chat(mode, conversationId, userMessage)
-            .subscribe().with(
+            .subscribe()
+            .with(
                 chatEvent -> ui.access(() -> {
                     switch (chatEvent) {
                         case TokenEvent token -> {
-                            currentAssistantItem.setText(currentAssistantItem.getText() + token.text());
+                            currentAssistantItem.setText("%s%s".formatted(currentAssistantItem.getText(), token.text()));
                             messageList.setItems(new ArrayList<>(items));
                         }
                         case ChunksRetrievedEvent chunksEvent -> addChunks(chunksEvent, round);
@@ -135,7 +136,7 @@ class ChatPanel extends VerticalLayout {
                     }
                 }),
                 failure -> ui.access(() -> {
-                    currentAssistantItem.setText("Error: " + failure.getMessage());
+                    currentAssistantItem.setText("Error: %s".formatted(failure.getMessage()));
                     messageList.setItems(new ArrayList<>(items));
                 })
             );
